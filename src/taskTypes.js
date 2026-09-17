@@ -1,0 +1,56 @@
+export const TASK_TYPES = {
+  '📚 School': [
+    { name: 'Quiz', priority: 'High' },
+    { name: 'Assignment', priority: 'High' },
+    { name: 'Exam', priority: 'High' },
+    { name: 'Project', priority: 'High' },
+    { name: 'Research', priority: 'Medium' },
+    { name: 'Study', priority: 'Medium' },
+    { name: 'Presentation', priority: 'High' },
+    { name: 'Homework', priority: 'Medium' },
+    { name: 'Laboratory', priority: 'Medium' },
+  ],
+  '🏠 Home': [
+    { name: 'Housework', priority: 'Low' },
+    { name: 'Clean room', priority: 'Low' },
+    { name: 'Laundry', priority: 'Low' },
+    { name: 'Wash dishes', priority: 'Low' },
+    { name: 'Organize desk', priority: 'Low' },
+    { name: 'Grocery shopping', priority: 'Medium' },
+    { name: 'Take out trash', priority: 'Low' },
+  ],
+  '💻 Personal / Tech': [
+    { name: 'Coding', priority: 'Medium' },
+    { name: 'Build a project', priority: 'Medium' },
+    { name: 'Practice programming', priority: 'Low' },
+    { name: 'Learn something new', priority: 'Low' },
+    { name: 'Update portfolio', priority: 'Medium' },
+    { name: 'Work on GitHub', priority: 'Medium' },
+  ],
+  '👥 Social': [
+    { name: 'Meeting', priority: 'Medium' },
+    { name: 'Call someone', priority: 'Low' },
+    { name: 'Group project', priority: 'High' },
+    { name: 'Event', priority: 'Medium' },
+    { name: 'Hangout', priority: 'Low' },
+    { name: 'Birthday', priority: 'Medium' },
+  ],
+  '🏃 Health & Routine': [
+    { name: 'Exercise', priority: 'Medium' },
+    { name: 'Walk', priority: 'Low' },
+    { name: 'Sleep', priority: 'Low' },
+    { name: 'Drink water', priority: 'Low' },
+    { name: 'Morning routine', priority: 'Low' },
+    { name: 'Evening routine', priority: 'Low' },
+  ],
+  '💼 Work': [
+    { name: 'Work task', priority: 'Medium' },
+    { name: 'Deadline', priority: 'High' },
+    { name: 'Meeting', priority: 'Medium' },
+    { name: 'Report', priority: 'High' },
+    { name: 'Research', priority: 'Medium' },
+    { name: 'Submit document', priority: 'High' },
+  ],
+}
+
+export const CATEGORY_GROUPS = Object.keys(TASK_TYPES)
