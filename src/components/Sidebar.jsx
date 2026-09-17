@@ -1,12 +1,10 @@
-// Sidebar.jsx
 import { useState } from 'react'
-import { LayoutGrid, CheckSquare, Calendar, FolderKanban, Settings, LogOut } from 'lucide-react'
+import { LayoutGrid, BookOpen, Music, Settings, LogOut } from 'lucide-react'
 
 const navItems = [
   { icon: LayoutGrid, label: 'Overview' },
-  { icon: CheckSquare, label: 'My tasks' },
-  { icon: Calendar, label: 'Calendar' },
-  { icon: FolderKanban, label: 'Projects' },
+  { icon: BookOpen, label: 'Notebook' },
+  { icon: Music, label: 'Music' },
 ]
 
 function getInitials(fullName) {
@@ -18,26 +16,31 @@ function getInitials(fullName) {
     .join('')
 }
 
-// Derives category counts + completion status live from the current tasks
 function getCategories(tasks) {
   const map = new Map()
 
   tasks.forEach((task) => {
     if (!map.has(task.category)) {
-      map.set(task.category, { total: 0, completed: 0 })
+      map.set(task.category, { total: 0, active: 0, hasHigh: false, hasMedium: false })
     }
     const entry = map.get(task.category)
     entry.total += 1
-    if (task.completed) entry.completed += 1
+    if (!task.completed) {
+      entry.active += 1
+      if (task.priority === 'High') entry.hasHigh = true
+      if (task.priority === 'Medium') entry.hasMedium = true
+    }
   })
 
-  return Array.from(map).map(([name, { total, completed }]) => {
-    let status = 'red'
-    if (completed === total) status = 'green'
-    else if (completed > 0) status = 'yellow'
+  return Array.from(map)
+    .filter(([, { active }]) => active > 0)
+    .map(([name, { active, hasHigh, hasMedium }]) => {
+      let status = 'green'
+      if (hasHigh) status = 'red'
+      else if (hasMedium) status = 'yellow'
 
-    return { name, count: total, status }
-  })
+      return { name, count: active, status }
+    })
 }
 
 const statusColors = {

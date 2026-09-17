@@ -3,9 +3,11 @@ import Sidebar from './components/Sidebar.jsx'
 import Header from './components/Header.jsx'
 import StatsCards from './components/StatsCards.jsx'
 import TaskList from './components/TaskList.jsx'
-import SchedulePanel from './components/SchedulePanel.jsx'
+import Notebook from './components/Notebook.jsx'
 import AddTaskModal from './components/AddTaskModal.jsx'
 import NameGate from './components/NameGate.jsx'
+import SchedulePanel from './components/SchedulePanel.jsx'
+import Music from './components/Music.jsx'
 
 function computeStats(tasks) {
   const total = tasks.length
@@ -23,11 +25,16 @@ function computeStats(tasks) {
   ]
 }
 
+function slugify(profile) {
+  return `${profile.firstName}-${profile.lastName}`.toLowerCase().replace(/\s+/g, '-')
+}
+
 function getTasksKey(profile) {
-  const slug = `${profile.firstName}-${profile.lastName}`
-    .toLowerCase()
-    .replace(/\s+/g, '-')
-  return `taskly-tasks-${slug}`
+  return `taskly-tasks-${slugify(profile)}`
+}
+
+function getNotebookKey(profile) {
+  return `taskly-notebook-${slugify(profile)}`
 }
 
 function playCompletionSound() {
@@ -66,6 +73,7 @@ export default function App() {
   const [profile, setProfile] = useState(null)
   const [loaded, setLoaded] = useState(false)
   const [toast, setToast] = useState(null)
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     const savedProfile = localStorage.getItem('taskly-profile')
@@ -128,6 +136,10 @@ export default function App() {
   }
 
   const fullName = `${profile.firstName} ${profile.lastName}`
+  const notebookKey = getNotebookKey(profile)
+  const filteredTasks = tasks.filter((t) =>
+  (t.title || '').toLowerCase().includes(searchQuery.toLowerCase())
+)
 
   return (
     <div className="app-shell">
@@ -145,28 +157,24 @@ export default function App() {
           name={profile.firstName}
           onAddTask={() => setIsModalOpen(true)}
           tasks={tasks}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
         />
 
         {activePage === 'Overview' && (
           <>
             <StatsCards stats={computeStats(tasks)} />
             <div className="content-columns">
-              <TaskList tasks={tasks} setTasks={setTasks} onToggleTask={toggleTask} />
+              <TaskList tasks={filteredTasks} setTasks={setTasks} onToggleTask={toggleTask} />
               <SchedulePanel tasks={tasks} />
             </div>
           </>
         )}
 
-        {activePage !== 'Overview' && (
-          <div className="task-card">
-            <div className="task-card__header">
-              <div>
-                <h2>{activePage}</h2>
-                <span className="task-card__count">Coming soon</span>
-              </div>
-            </div>
-          </div>
+        {activePage === 'Notebook' && (
+          <Notebook storageKey={notebookKey} />
         )}
+        {activePage === 'Music' && <Music />}
       </main>
 
       {isModalOpen && (

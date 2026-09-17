@@ -9,7 +9,7 @@ function formatTime(time24) {
   return `${hour12}:${String(m).padStart(2, '0')} ${period}`
 }
 
-export default function Header({ dateLabel, name, onAddTask, tasks }) {
+export default function Header({ dateLabel, name, onAddTask, tasks, searchQuery, onSearchChange }) {
   const [notifOpen, setNotifOpen] = useState(false)
 
   const todayStr = new Date().toISOString().slice(0, 10)
@@ -28,7 +28,12 @@ export default function Header({ dateLabel, name, onAddTask, tasks }) {
       <div className="page-header__actions">
         <div className="search-field">
           <Search size={16} />
-          <input type="text" placeholder="Search tasks..." />
+          <input
+            type="text"
+            placeholder="Search tasks..."
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+          />
         </div>
 
         <div className="notif-wrapper">
