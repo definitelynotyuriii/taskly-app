@@ -35,9 +35,10 @@ function createTextBox(offset = 0) {
     font: FONT_OPTIONS[0].value,
     color: '#000000',
     fontSize: 22,
+    bold: false,
+    italic: false,
   }
 }
-
 function createPage(title = 'Page 1') {
   return {
     id: Date.now() + Math.random(),
@@ -117,12 +118,12 @@ export default function Notebook({ storageKey }) {
   }, [selectedBoxId])
 
   // Close font menu on any click outside of it
-  useEffect(() => {
-    if (!fontMenuOpen) return
-    const close = () => setFontMenuOpen(false)
-    window.addEventListener('mousedown', close)
-    return () => window.removeEventListener('mousedown', close)
-  }, [fontMenuOpen])
+    useEffect(() => {
+      if (!fontMenuOpen) return
+      const close = () => setFontMenuOpen(false)
+      window.addEventListener('mousedown', close)
+      return () => window.removeEventListener('mousedown', close)
+    }, [fontMenuOpen])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -195,10 +196,10 @@ export default function Notebook({ storageKey }) {
     )
   }
 
-  const deleteTextBox = (boxId) => {
-    updatePage(activePage.id, { textBoxes: activePage.textBoxes.filter((b) => b.id !== boxId) })
-    if (selectedBoxId === boxId) setSelectedBoxId(null)
-  }
+const deleteTextBox = (boxId) => {
+  updatePage(activePage.id, { textBoxes: activePage.textBoxes.filter((b) => b.id !== boxId) })
+  if (selectedBoxId === boxId) setSelectedBoxId(null)
+}
 
   const startDragBox = (e, box) => {
     e.stopPropagation()
@@ -381,28 +382,27 @@ export default function Notebook({ storageKey }) {
                 className="notebook-font-picker"
                 onMouseDown={(e) => e.stopPropagation()}
               >
-                <button
-                  type="button"
-                  className="notebook-font-picker__trigger"
-                  onClick={() => setFontMenuOpen((v) => !v)}
-                >
-                  <span style={{ fontFamily: selectedBox.font }}>
+                        <button
+                          type="button"
+                          className="notebook-font-picker__trigger"
+                          onClick={() => setFontMenuOpen((v) => !v)}
+                        >
+                      <span style={{ fontFamily: selectedBox.font }}>
                     {FONT_OPTIONS.find((f) => f.value === selectedBox.font)?.label || 'Font'}
                   </span>
                   <ChevronDown size={14} />
                 </button>
-
-                {fontMenuOpen && (
-                  <div className="notebook-font-picker__menu">
+                    {fontMenuOpen && (
+                      <div className="notebook-font-picker__menu">
                     {FONT_OPTIONS.map((f) => (
                       <button
                         key={f.value}
                         type="button"
                         className={`notebook-font-picker__option${selectedBox.font === f.value ? ' notebook-font-picker__option--active' : ''}`}
-                        onClick={() => {
-                          updateTextBox(selectedBox.id, { font: f.value })
-                          setFontMenuOpen(false)
-                        }}
+                      onClick={() => {
+                        updateTextBox(selectedBox.id, { font: f.value })
+                        setFontMenuOpen(false)
+                      }}
                       >
                         <span className="notebook-font-picker__sample" style={{ fontFamily: f.value }}>
                           Aa
@@ -449,18 +449,16 @@ export default function Notebook({ storageKey }) {
               />
 
               <button
-                className="notebook-tool"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => document.execCommand('bold')}
-                title="Bold the highlighted text"
+                className={`notebook-tool${selectedBox.bold ? ' notebook-tool--active' : ''}`}
+                onClick={() => updateTextBox(selectedBox.id, { bold: !selectedBox.bold })}
+                title="Bold this text box"
               >
                 <Bold size={15} />
               </button>
               <button
-                className="notebook-tool"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => document.execCommand('italic')}
-                title="Italicize the highlighted text"
+                className={`notebook-tool${selectedBox.italic ? ' notebook-tool--active' : ''}`}
+                onClick={() => updateTextBox(selectedBox.id, { italic: !selectedBox.italic })}
+                title="Italicize this text box"
               >
                 <Italic size={15} />
               </button>
@@ -589,25 +587,27 @@ export default function Notebook({ storageKey }) {
                   </button>
                 </div>
               )}
-              <div
-                contentEditable
-                suppressContentEditableWarning
-                ref={(el) => {
-                  if (el && el.innerHTML === '' && box.html) {
-                    el.innerHTML = box.html
-                  }
-                }}
-                className="notebook-textbox__area"
-                data-placeholder="Type here..."
-                style={{
-                  fontFamily: box.font,
-                  color: box.color,
-                  fontSize: box.fontSize,
-                  height: selectedBoxId === box.id ? 'calc(100% - 24px)' : '100%',
-                }}
-                onInput={(e) => updateTextBox(box.id, { html: e.currentTarget.innerHTML })}
-                onFocus={() => setSelectedBoxId(box.id)}
-              />
+          <div
+            contentEditable
+            suppressContentEditableWarning
+            ref={(el) => {
+              if (el && el.innerHTML === '' && box.html) {
+                el.innerHTML = box.html
+              }
+            }}
+            className="notebook-textbox__area"
+            data-placeholder="Type here..."
+            style={{
+              fontFamily: box.font,
+              color: box.color,
+              fontSize: box.fontSize,
+              fontWeight: box.bold ? 700 : 400,
+              fontStyle: box.italic ? 'italic' : 'normal',
+              height: selectedBoxId === box.id ? 'calc(100% - 24px)' : '100%',
+            }}
+            onInput={(e) => updateTextBox(box.id, { html: e.currentTarget.innerHTML })}
+            onFocus={() => setSelectedBoxId(box.id)}
+          />
             </div>
           ))}
 
@@ -630,4 +630,3 @@ export default function Notebook({ storageKey }) {
     </div>
   )
 }
-

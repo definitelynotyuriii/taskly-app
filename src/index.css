@@ -1187,7 +1187,9 @@ button {
 }
 
 .notebook-draw__toolbar {
-  animation: notebook-toolbar-in 0.25s ease both;
+  animation: none;
+  position: relative;
+  z-index: 20;
 }
 
 @keyframes notebook-toolbar-in {
@@ -1267,6 +1269,7 @@ button {
   position: relative;
   min-height: 560px;
 }
+
 
 .notebook-paper__sheet {
   position: relative;
@@ -1475,7 +1478,7 @@ button {
   border-radius: var(--radius-md);
   padding: 6px;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
-  z-index: 30;
+  z-index: 9999;
   display: flex;
   flex-direction: column;
   gap: 2px;
