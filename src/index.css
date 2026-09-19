@@ -1180,7 +1180,7 @@ button {
   border-radius: var(--radius-sm);
   padding: 8px 10px;
   font-size: 13.5px;
-  color: var(--text-primary);
+    color: #000000;
   outline: none;
 }
 
@@ -1261,7 +1261,7 @@ button {
   border-radius: var(--radius-md);
   padding: 10px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-  z-index: 40;
+  z-index: 200;
 }
 
 .notif-panel__header {
@@ -2917,6 +2917,13 @@ button {
   gap: 24px;
   flex-wrap: wrap;
   animation: header-fade-down 0.4s ease both;
+  position: relative;   /* add */
+  z-index: 100;          /* add */
+}
+
+.modal-field select option {   /* add this whole new rule */
+  background: #ffffff;
+  color: #000000;
 }
 
 @keyframes header-fade-down {
