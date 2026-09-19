@@ -1,5 +1,14 @@
-import { useState } from 'react'
-import { Search, Bell, Plus } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { Search, Bell, Plus, Quote } from 'lucide-react'
+
+function getPHDateKey(date = new Date()) {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Manila',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date)
+}
 
 function formatTime(time24) {
   if (!time24) return ''
@@ -9,20 +18,70 @@ function formatTime(time24) {
   return `${hour12}:${String(m).padStart(2, '0')} ${period}`
 }
 
+function getGreeting() {
+  const phHour = Number(
+    new Intl.DateTimeFormat('en-US', {
+      hour: 'numeric',
+      hour12: false,
+      timeZone: 'Asia/Manila',
+    }).format(new Date())
+  )
+
+  if (phHour < 12) return 'Good morning'
+  if (phHour < 18) return 'Good afternoon'
+  return 'Good evening'
+}
+
+const QUOTES = [
+  { text: "Success is the sum of small efforts, repeated day in and day out.", author: "Robert Collier" },
+  { text: "Discipline is choosing between what you want now and what you want most.", author: "Abraham Lincoln" },
+  { text: "The future depends on what you do today.", author: "Mahatma Gandhi" },
+  { text: "Don't watch the clock; do what it does. Keep going.", author: "Sam Levenson" },
+  { text: "Great things are done by a series of small things brought together.", author: "Vincent van Gogh" },
+  { text: "You don't have to be great to start, but you have to start to be great.", author: "Zig Ziglar" },
+  { text: "Success doesn't come from what you do occasionally. It comes from what you do consistently.", author: "Marie Forleo" },
+  { text: "It does not matter how slowly you go as long as you do not stop.", author: "Confucius" },
+  { text: "Dream big. Start small. Act now.", author: "Robin Sharma" },
+  { text: "Your goals don't care how you feel. Show up anyway.", author: "Unknown" },
+  { text: "One day or day one. You decide.", author: "Unknown" },
+  { text: "Stop waiting for motivation. Build discipline.", author: "Unknown" },
+  { text: "The pain of discipline is nothing compared to the pain of regret.", author: "Unknown" },
+  { text: "Make today so productive that tomorrow becomes easier.", author: "Unknown" },
+  { text: "A little progress each day adds up to big results.", author: "Unknown" },
+  { text: "Your only limit is the one you set for yourself.", author: "Unknown" },
+  { text: "Work hard in silence. Let your progress make the noise.", author: "Unknown" },
+  { text: "Don't quit because it's hard. Keep going because it's worth it.", author: "Unknown" },
+  { text: "Focus on the task in front of you. The rest can wait.", author: "Unknown" },
+  { text: "Finish what you start.", author: "Unknown" },
+];
+
+function getDailyIndex(length) {
+  const [y, m, d] = getPHDateKey().split('-').map(Number)
+  const dayNumber = Math.floor(Date.UTC(y, m - 1, d) / (1000 * 60 * 60 * 24))
+  return dayNumber % length
+}
+
 export default function Header({ dateLabel, name, onAddTask, tasks, searchQuery, onSearchChange }) {
   const [notifOpen, setNotifOpen] = useState(false)
 
-  const todayStr = new Date().toISOString().slice(0, 10)
+  const todayStr = getPHDateKey()
 
   const overdue = tasks.filter((t) => !t.completed && t.due < todayStr)
   const dueToday = tasks.filter((t) => !t.completed && t.due === todayStr)
   const notifCount = overdue.length + dueToday.length
 
+  const quote = useMemo(() => QUOTES[getDailyIndex(QUOTES.length)], [])
+
   return (
     <header className="page-header">
       <div>
         <p className="page-header__eyebrow">{dateLabel}</p>
-        <h1 className="page-header__title">Good afternoon, {name}</h1>
+        <h1 className="page-header__title">{getGreeting()}, {name}</h1>
+        <p className="page-header__quote">
+          <Quote size={13} className="page-header__quote-icon" />
+          <span>"{quote.text}"</span>
+          <span className="page-header__quote-author">— {quote.author}</span>
+        </p>
       </div>
 
       <div className="page-header__actions">

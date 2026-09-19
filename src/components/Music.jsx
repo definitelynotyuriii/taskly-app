@@ -1,115 +1,114 @@
 import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { Upload, Play, Pause, SkipBack, SkipForward, Music as MusicIcon } from 'lucide-react'
+import {
+  Upload,
+  Play,
+  Pause,
+  SkipBack,
+  SkipForward,
+  Trash2,
+  X,
+  ChevronDown,
+  Music as MusicIcon,
+} from 'lucide-react'
 
 /* ==================================================================
-   MY MUSIC  —  how to add songs that are already on your computer
+   MY MUSIC  —  two ways to add songs
    ------------------------------------------------------------------
-   1. Copy your MP3 files into the folder:   public/music/
-      (create the folder if it doesn't exist. Tip: use file names
-       without spaces, like  my-song.mp3 )
-   2. Add one line per song in the list below.
-        name   = what shows in the app
-        file   = the path, always starting with  /music/
-        artist = (optional) small text under the name
-        cover  = (optional) a picture, e.g. /music/covers/my-song.jpg
-                 If you skip it, the app reads the cover inside the
-                 MP3 file. If there is none, it shows a colored square.
-   3. Save. The songs appear in "My music" with a play button and duration.
+   A) "Add songs" button in the app
+      Songs are saved in your browser (IndexedDB) for your account,
+      so they stay after refresh and after logout / login.
+      You can delete them with the trash icon.
+
+   B) Songs that are already on your computer (permanent, in code)
+      1. Copy your MP3 files into the folder:   public/music/
+      2. Add one line per song in the list below.
+           name   = what shows in the app
+           file   = the path, always starting with  /music/
+           artist = (optional) small text under the name
+           cover  = (optional) a picture, e.g. /music/covers/my-song.jpg
+                    If you skip it, the app reads the cover inside the
+                    MP3 file. If there is none, it shows a colored square.
+      These cannot be deleted from the app (remove the line to remove them).
    ================================================================== */
 const MY_SONGS = [
-  // { name: 'My First Song', file: '/music/my-first-song.mp3' },
-  // { name: 'Another Song', artist: 'Me', file: '/music/another-song.mp3', cover: '/music/covers/another-song.jpg' },
+  {
+    name: 'All Girls are the Same',
+    artist: 'Juice Wrld',
+    file: '/music/ALLGIRLSARETHESAME.mp3',
+    cover: '/imgs/juicewrld1.jpg',   
+  },
+    {
+    name: 'Robbery',
+    artist: 'Juice Wrld',
+    file: '/music/ROBBERY.mp3',
+    cover: '/imgs/juicewrld2.jpg',   
+  },
 ]
 
-/* ==================================================================
-   YOUTUBE BUTTONS  —  each button plays a YouTube link
-   ================================================================== */
-const FEATURED_PLAYLISTS = [
-  // { name: 'My next song', url: 'PASTE_YOUTUBE_LINK_HERE' },
-]
+/* ------------------------------------------------------------------ */
+/* Saved songs (IndexedDB). Each song is stored with an "owner" key    */
+/* so every user only sees their own added songs.                      */
+/* ------------------------------------------------------------------ */
+const DB_NAME = 'taskly-music'
+const STORE_NAME = 'songs'
 
-/* ---------------- YouTube (official embedded player) ---------------- */
-let ytApiPromise = null
-function loadYouTubeApi() {
-  if (ytApiPromise) return ytApiPromise
-  ytApiPromise = new Promise((resolve, reject) => {
-    if (window.YT && window.YT.Player) return resolve(window.YT)
-    const previous = window.onYouTubeIframeAPIReady
-    window.onYouTubeIframeAPIReady = () => {
-      if (typeof previous === 'function') previous()
-      resolve(window.YT)
+function openDB() {
+  return new Promise((resolve, reject) => {
+    if (typeof indexedDB === 'undefined') {
+      reject(new Error('IndexedDB not available'))
+      return
     }
-    const script = document.createElement('script')
-    script.src = 'https://www.youtube.com/iframe_api'
-    script.async = true
-    script.onerror = () => {
-      ytApiPromise = null
-      reject(new Error('YouTube API could not load'))
+    const req = indexedDB.open(DB_NAME, 1)
+    req.onupgradeneeded = () => {
+      const db = req.result
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' })
+        store.createIndex('owner', 'owner')
+      }
     }
-    document.body.appendChild(script)
+    req.onsuccess = () => resolve(req.result)
+    req.onerror = () => reject(req.error)
   })
-  return ytApiPromise
 }
 
-// Accepts watch links, youtu.be, shorts, music.youtube.com and playlist links
-function parseYouTubeLink(input) {
-  const text = (input || '').trim()
-  if (!text) return null
-  let url
-  try {
-    url = new URL(/^https?:\/\//i.test(text) ? text : `https://${text}`)
-  } catch (err) {
-    return null
-  }
-  const host = url.hostname.replace(/^www\./, '').replace(/^m\./, '')
-  let videoId = null
-  if (host === 'youtu.be') {
-    videoId = url.pathname.slice(1).split('/')[0]
-  } else if (host === 'youtube.com' || host.endsWith('.youtube.com') || host === 'youtube-nocookie.com') {
-    if (url.pathname === '/watch') {
-      videoId = url.searchParams.get('v')
-    } else {
-      const m = url.pathname.match(/^\/(?:shorts|embed|live|v)\/([A-Za-z0-9_-]{11})/)
-      if (m) videoId = m[1]
+async function dbGetAll(owner) {
+  const db = await openDB()
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readonly')
+    const req = tx.objectStore(STORE_NAME).index('owner').getAll(owner)
+    req.onsuccess = () => resolve(req.result || [])
+    req.onerror = () => reject(req.error)
+    tx.oncomplete = () => db.close()
+  })
+}
+
+async function dbPut(record) {
+  const db = await openDB()
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite')
+    tx.objectStore(STORE_NAME).put(record)
+    tx.oncomplete = () => {
+      db.close()
+      resolve()
     }
-  } else {
-    return null
-  }
-  const listId = url.searchParams.get('list')
-  if (videoId && /^[A-Za-z0-9_-]{11}$/.test(videoId)) return { videoId, listId: null }
-  if (listId && /^[A-Za-z0-9_-]+$/.test(listId)) return { videoId: null, listId }
-  return null
+    tx.onerror = () => reject(tx.error)
+    tx.onabort = () => reject(tx.error)
+  })
 }
 
-function applyYouTubeSource(player, src) {
-  if (src.videoId) player.loadVideoById(src.videoId)
-  else player.loadPlaylist({ listType: 'playlist', list: src.listId })
-}
-
-function readYouTube(player) {
-  try {
-    if (!player || !player.getPlayerState) return null
-    const vd = (player.getVideoData && player.getVideoData()) || {}
-    return {
-      state: player.getPlayerState(),
-      time: player.getCurrentTime() || 0,
-      dur: player.getDuration() || 0,
-      title: vd.title || '',
-      videoId: vd.video_id || '',
+async function dbDelete(id) {
+  const db = await openDB()
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite')
+    tx.objectStore(STORE_NAME).delete(id)
+    tx.oncomplete = () => {
+      db.close()
+      resolve()
     }
-  } catch (err) {
-    return null
-  }
-}
-
-function pauseYouTubePlayer(playerRef) {
-  try {
-    const p = playerRef.current
-    if (p && p.getPlayerState && p.getPlayerState() === 1) p.pauseVideo()
-  } catch (err) {
-    /* ignore */
-  }
+    tx.onerror = () => reject(tx.error)
+    tx.onabort = () => reject(tx.error)
+  })
 }
 
 /* ---------------- small helpers ---------------- */
@@ -231,7 +230,7 @@ async function extractCover(readHead) {
   return null
 }
 
-// For files picked with "Add songs"
+// For files picked with "Add songs" (and for saved songs loaded back)
 const coverFromFile = (file) =>
   extractCover(async (n) => new Uint8Array(await file.slice(0, n).arrayBuffer()))
 
@@ -300,7 +299,8 @@ function Equalizer() {
 const musicStyles = `
 /* colors come from your app; the fallbacks are used if a variable is missing */
 .music-panel,
-.music-bar {
+.music-bar,
+.music-expanded-overlay {
   --m-bg: var(--bg-panel, #161d26);
   --m-raised: var(--bg-panel-raised, #1f2933);
   --m-border: var(--border-soft, #262f3a);
@@ -318,7 +318,8 @@ const musicStyles = `
 
 @supports (background: color-mix(in srgb, red 10%, transparent)) {
   .music-panel,
-  .music-bar {
+  .music-bar,
+  .music-expanded-overlay {
     --m-accent-soft: color-mix(in srgb, var(--m-accent) 13%, transparent);
   }
 }
@@ -327,6 +328,12 @@ const musicStyles = `
   display: flex;
   flex-direction: column;
   gap: 20px;
+  animation: m-panel-in 0.4s ease both;
+}
+
+@keyframes m-panel-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 /* leave room so the bottom bar never covers the last song */
@@ -340,6 +347,13 @@ const musicStyles = `
   border: 1px solid var(--m-border);
   border-radius: var(--m-r-lg);
   padding: 20px;
+  transition: border-color 0.25s ease;
+  animation: m-card-in 0.45s ease both;
+}
+
+@keyframes m-card-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .m-card__head {
@@ -376,17 +390,41 @@ const musicStyles = `
   font-weight: 700;
   cursor: pointer;
   flex-shrink: 0;
-  transition: transform 0.15s ease, filter 0.15s ease;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.2s ease;
 }
 
 .m-btn--accent {
   background: var(--m-accent);
   color: var(--m-accent-ink);
+  box-shadow: 0 2px 10px rgba(45, 212, 191, 0.25);
+}
+
+.m-btn--accent::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -75%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+  transform: skewX(-20deg);
+  transition: left 0.5s ease;
 }
 
 .m-btn--accent:hover {
   transform: translateY(-1px);
   filter: brightness(1.05);
+  box-shadow: 0 6px 18px rgba(45, 212, 191, 0.4);
+}
+
+.m-btn--accent:hover::before {
+  left: 130%;
+}
+
+.m-btn--accent:active {
+  transform: translateY(0) scale(0.97);
 }
 
 .m-btn input[type="file"] {
@@ -397,6 +435,12 @@ const musicStyles = `
   margin: 0 0 12px;
   color: #f87171;
   font-size: 13px;
+  animation: m-error-in 0.25s ease both;
+}
+
+@keyframes m-error-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .m-hint {
@@ -421,11 +465,25 @@ const musicStyles = `
   padding: 10px 12px;
   border-radius: var(--m-r-md);
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: background 0.15s ease, transform 0.15s ease;
+  animation: m-track-in 0.3s ease both;
+}
+
+.m-list .m-track:nth-child(1) { animation-delay: 0.02s; }
+.m-list .m-track:nth-child(2) { animation-delay: 0.05s; }
+.m-list .m-track:nth-child(3) { animation-delay: 0.08s; }
+.m-list .m-track:nth-child(4) { animation-delay: 0.11s; }
+.m-list .m-track:nth-child(5) { animation-delay: 0.14s; }
+.m-list .m-track:nth-child(n+6) { animation-delay: 0.17s; }
+
+@keyframes m-track-in {
+  from { opacity: 0; transform: translateX(-6px); }
+  to   { opacity: 1; transform: translateX(0); }
 }
 
 .m-track:hover {
   background: var(--m-raised);
+  transform: translateX(2px);
 }
 
 .m-track:focus-visible {
@@ -453,7 +511,7 @@ const musicStyles = `
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease, box-shadow 0.2s ease;
 }
 
 .m-track:hover .m-track__play,
@@ -463,8 +521,16 @@ const musicStyles = `
   color: var(--m-accent-ink);
 }
 
+.m-track--active .m-track__play {
+  box-shadow: 0 0 0 4px var(--m-accent-soft);
+}
+
 .m-track__play:hover {
-  transform: scale(1.08);
+  transform: scale(1.1);
+}
+
+.m-track__play:active {
+  transform: scale(0.92);
 }
 
 .m-cover {
@@ -475,6 +541,11 @@ const musicStyles = `
   color: var(--m-accent);
   overflow: hidden;
   flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.m-track:hover .m-cover {
+  transform: scale(1.04);
 }
 
 .m-cover img {
@@ -513,6 +584,7 @@ const musicStyles = `
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  transition: color 0.2s ease;
 }
 
 .m-track--active .m-track__name {
@@ -536,6 +608,47 @@ const musicStyles = `
   font-size: 13px;
   color: var(--m-text3);
   font-variant-numeric: tabular-nums;
+}
+
+/* duration + delete button on the right side of each row */
+.m-track__end {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.m-track__delete,
+.m-track__delete-spacer {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+
+.m-track__delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--m-text3);
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+
+.m-track__delete:hover {
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.12);
+  transform: scale(1.1);
+}
+
+.m-track__delete:active {
+  transform: scale(0.92);
+}
+
+.m-track__delete:focus-visible {
+  outline: 2px solid #f87171;
+  outline-offset: 2px;
 }
 
 /* little bars that move only while the song plays */
@@ -575,6 +688,12 @@ const musicStyles = `
   font-size: 13.5px;
   line-height: 1.7;
   color: var(--m-text3);
+  animation: m-empty-in 0.3s ease both;
+}
+
+@keyframes m-empty-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 .m-empty strong {
@@ -590,82 +709,6 @@ const musicStyles = `
   background: var(--m-raised);
   color: var(--m-text2);
   font-size: 12.5px;
-}
-
-/* ---------- YouTube card ---------- */
-.m-form {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.m-input {
-  flex: 1 1 260px;
-  min-width: 0;
-  background: var(--m-raised);
-  border: 1px solid var(--m-border-strong);
-  border-radius: var(--m-r-sm);
-  padding: 11px 14px;
-  color: var(--m-text);
-  font-size: 14px;
-  outline: none;
-  transition: border-color 0.15s ease;
-}
-
-.m-input:focus {
-  border-color: var(--m-accent);
-}
-
-.m-chips {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-top: 14px;
-}
-
-.m-chip {
-  padding: 8px 14px;
-  border-radius: 999px;
-  border: 1px solid var(--m-border-strong);
-  background: var(--m-raised);
-  color: var(--m-text);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
-}
-
-.m-chip:hover {
-  border-color: var(--m-accent);
-}
-
-.m-chip--active {
-  border-color: var(--m-accent);
-  background: var(--m-accent-soft);
-  color: var(--m-accent);
-}
-
-.m-player {
-  margin-top: 16px;
-  max-width: 720px;
-}
-
-.youtube-embed-host {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  border-radius: var(--m-r-md);
-  overflow: hidden;
-  background: #000;
-}
-
-.youtube-embed-host iframe {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  border: none;
-  display: block;
 }
 
 /* ---------- bottom bar ---------- */
@@ -686,11 +729,12 @@ const musicStyles = `
   border-radius: 18px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
   color: var(--m-text);
-  animation: music-bar-in 0.25s ease-out;
+  cursor: pointer;
+  animation: music-bar-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes music-bar-in {
-  from { opacity: 0; transform: translate(-50%, 12px); }
+  from { opacity: 0; transform: translate(-50%, 20px); }
   to   { opacity: 1; transform: translate(-50%, 0); }
 }
 
@@ -703,6 +747,7 @@ const musicStyles = `
   height: 52px;
   border-radius: 10px;
   font-size: 20px;
+  transition: transform 0.3s ease;
 }
 
 .music-bar__info {
@@ -739,11 +784,16 @@ const musicStyles = `
   background: none;
   color: var(--m-text2);
   cursor: pointer;
-  transition: color 0.15s ease;
+  transition: color 0.15s ease, transform 0.15s ease;
 }
 
 .music-bar__skip:hover {
   color: var(--m-text);
+  transform: scale(1.15);
+}
+
+.music-bar__skip:active {
+  transform: scale(0.9);
 }
 
 .music-bar__play {
@@ -757,12 +807,49 @@ const musicStyles = `
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform 0.15s ease, filter 0.15s ease;
+  transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 14px rgba(45, 212, 191, 0.35);
 }
 
 .music-bar__play:hover {
-  transform: scale(1.06);
+  transform: scale(1.08);
   filter: brightness(1.05);
+  box-shadow: 0 6px 18px rgba(45, 212, 191, 0.5);
+}
+
+.music-bar__play:active {
+  transform: scale(0.95);
+}
+
+/* X button in the top-right corner of the player */
+.music-bar__close {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--m-border-strong);
+  background: var(--m-raised);
+  color: var(--m-text2);
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  transition: color 0.15s ease, background 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+}
+
+.music-bar__close:hover {
+  color: #f87171;
+  border-color: #f87171;
+  background: rgba(239, 68, 68, 0.12);
+  transform: scale(1.1);
+}
+
+.music-bar__close:active {
+  transform: scale(0.92);
 }
 
 /* drag or tap to jump to any part of the song */
@@ -788,6 +875,7 @@ const musicStyles = `
   height: 3px;
   border-radius: 2px;
   background: linear-gradient(to right, var(--m-accent) var(--pct, 0%), var(--m-border-strong) var(--pct, 0%));
+  transition: background 0.1s linear;
 }
 
 .music-bar__seek::-webkit-slider-thumb {
@@ -797,6 +885,11 @@ const musicStyles = `
   margin-top: -3.5px;
   border-radius: 50%;
   background: var(--m-accent);
+  transition: transform 0.15s ease;
+}
+
+.music-bar__seek:hover::-webkit-slider-thumb {
+  transform: scale(1.3);
 }
 
 .music-bar__seek::-moz-range-track {
@@ -817,6 +910,11 @@ const musicStyles = `
   border: none;
   border-radius: 50%;
   background: var(--m-accent);
+  transition: transform 0.15s ease;
+}
+
+.music-bar__seek:hover::-moz-range-thumb {
+  transform: scale(1.3);
 }
 
 @media (max-width: 480px) {
@@ -832,29 +930,277 @@ const musicStyles = `
     display: none;
   }
 }
+
+/* ---------- expanded (full-screen) player ---------- */
+.music-expanded-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  color: #fff;
+  overflow: hidden;
+  animation: music-expand-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes music-expand-in {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .music-expanded-overlay { animation: none; }
+}
+
+.music-expanded-overlay__bg {
+  position: absolute;
+  inset: -10%;
+  z-index: 0;
+  filter: blur(60px) saturate(1.3);
+  transform: scale(1.1);
+  transition: background 0.4s ease;
+}
+
+.music-expanded-overlay__scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.35) 0%,
+    rgba(0, 0, 0, 0.55) 45%,
+    rgba(0, 0, 0, 0.88) 100%
+  );
+}
+
+.music-expanded {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: max(18px, env(safe-area-inset-top, 0px)) 22px calc(30px + env(safe-area-inset-bottom, 0px));
+  box-sizing: border-box;
+}
+
+.music-expanded__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.music-expanded__icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.music-expanded__icon-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.06);
+}
+
+.music-expanded__icon-btn:active {
+  transform: scale(0.92);
+}
+
+.music-expanded__eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.72);
+  font-weight: 800;
+}
+
+.music-expanded__art-wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 0;
+}
+
+.music-expanded__art {
+  width: min(340px, 74vw);
+  height: min(340px, 74vw);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.55);
+  font-size: 72px;
+  flex-shrink: 0;
+}
+
+.music-expanded__info {
+  flex-shrink: 0;
+  margin-bottom: 18px;
+}
+
+.music-expanded__title {
+  font-size: 22px;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.music-expanded__artist {
+  margin-top: 4px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.72);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.music-expanded__seek-wrap {
+  flex-shrink: 0;
+  margin-bottom: 6px;
+}
+
+.music-expanded__seek {
+  width: 100%;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.music-expanded__seek:disabled {
+  cursor: default;
+}
+
+.music-expanded__seek::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(to right, #fff var(--pct, 0%), rgba(255, 255, 255, 0.25) var(--pct, 0%));
+  transition: background 0.1s linear;
+}
+
+.music-expanded__seek::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  margin-top: -4px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.15s ease;
+}
+
+.music-expanded__seek:hover::-webkit-slider-thumb {
+  transform: scale(1.3);
+}
+
+.music-expanded__seek::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.music-expanded__seek::-moz-range-progress {
+  height: 4px;
+  border-radius: 2px;
+  background: #fff;
+}
+
+.music-expanded__seek::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: none;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.15s ease;
+}
+
+.music-expanded__seek:hover::-moz-range-thumb {
+  transform: scale(1.3);
+}
+
+.music-expanded__times {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.65);
+  font-variant-numeric: tabular-nums;
+}
+
+.music-expanded__controls {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 30px;
+  margin-top: 10px;
+}
+
+.music-expanded__skip {
+  border: none;
+  background: none;
+  color: #fff;
+  display: flex;
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.music-expanded__skip:hover {
+  transform: scale(1.12);
+}
+
+.music-expanded__skip:active {
+  transform: scale(0.9);
+}
+
+.music-expanded__play {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: none;
+  background: #fff;
+  color: #111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.music-expanded__play:hover {
+  transform: scale(1.06);
+}
+
+.music-expanded__play:active {
+  transform: scale(0.94);
+}
 `
 
-export default function Music() {
+export default function Music({ storageKey = 'guest' }) {
   const [tracks, setTracks] = useState(() => MY_SONGS.map(makeBuiltInTrack))
   const [activeIndex, setActiveIndex] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [audioError, setAudioError] = useState('')
-  const [activeSource, setActiveSource] = useState(null) // 'local' | 'youtube'
-
-  const [youtubeInput, setYoutubeInput] = useState('')
-  const [ytSource, setYtSource] = useState(null) // { videoId, listId }
-  const [ytNow, setYtNow] = useState(null) // live info from the YouTube player
-  const [ytError, setYtError] = useState('')
+  const [isExpanded, setIsExpanded] = useState(false)
 
   const audioRef = useRef(null)
   const tracksRef = useRef([])
   const shouldAutoPlay = useRef(false)
-  const ytHostRef = useRef(null)
-  const ytPlayerRef = useRef(null)
-  const ytReadyRef = useRef(false)
-  const pendingYtRef = useRef(null)
 
   const activeTrack = tracks[activeIndex] || null
 
@@ -895,6 +1241,58 @@ export default function Music() {
     }
   }, [])
 
+  // Load the songs this user added before (saved in IndexedDB)
+  useEffect(() => {
+    let cancelled = false
+
+    ;(async () => {
+      let saved = []
+      try {
+        saved = await dbGetAll(storageKey)
+      } catch (err) {
+        console.warn('Could not load saved songs', err)
+        return
+      }
+      if (cancelled || saved.length === 0) return
+
+      saved.sort((a, b) => a.addedAt - b.addedAt)
+
+      const restored = saved.map((rec) => ({
+        id: rec.id,
+        file: rec.blob,
+        name: rec.name,
+        artist: '',
+        url: URL.createObjectURL(rec.blob),
+        cover: null,
+        duration: 0,
+        uploaded: true,
+      }))
+
+      setTracks((prev) => {
+        const have = new Set(prev.map((t) => t.id))
+        return [...prev, ...restored.filter((t) => !have.has(t.id))]
+      })
+
+      // fill in cover photo + duration in the background
+      restored.forEach(async (t) => {
+        const [cover, dur] = await Promise.all([coverFromFile(t.file), getAudioDuration(t.url)])
+        if (cancelled) {
+          if (cover) URL.revokeObjectURL(cover)
+          return
+        }
+        setTracks((prev) =>
+          prev.map((x) =>
+            x.id === t.id ? { ...x, cover: cover || x.cover, duration: dur || x.duration } : x
+          )
+        )
+      })
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [storageKey])
+
   // Auto-play once the new track's audio has been swapped in
   useEffect(() => {
     if (shouldAutoPlay.current && audioRef.current && activeTrack) {
@@ -903,108 +1301,25 @@ export default function Music() {
     }
   }, [activeTrack])
 
-  /* ---- YouTube: create the player (or load a new link into it) ---- */
+  // Lock page scroll while the full-screen player is open
   useEffect(() => {
-    if (!ytSource) return
-    let cancelled = false
-
-    loadYouTubeApi()
-      .then((YT) => {
-        if (cancelled) return
-
-        // player already exists -> just load the new link into it
-        if (ytPlayerRef.current) {
-          if (ytReadyRef.current) applyYouTubeSource(ytPlayerRef.current, ytSource)
-          else pendingYtRef.current = ytSource
-          return
-        }
-
-        const host = ytHostRef.current
-        if (!host) return
-        const el = document.createElement('div')
-        host.appendChild(el)
-
-        ytPlayerRef.current = new YT.Player(el, {
-          width: '100%',
-          height: '100%',
-          videoId: ytSource.videoId || undefined,
-          playerVars: {
-            playsinline: 1,
-            rel: 0,
-            autoplay: 1,
-            ...(ytSource.videoId ? {} : { listType: 'playlist', list: ytSource.listId }),
-          },
-          events: {
-            onReady: () => {
-              ytReadyRef.current = true
-              if (pendingYtRef.current) {
-                applyYouTubeSource(ytPlayerRef.current, pendingYtRef.current)
-                pendingYtRef.current = null
-              }
-            },
-            onStateChange: (e) => {
-              if (e.data === 1) {
-                // YouTube started: show it in the bottom bar and stop uploaded songs
-                setActiveSource('youtube')
-                if (audioRef.current && !audioRef.current.paused) audioRef.current.pause()
-              }
-            },
-            onError: (e) => {
-              const code = e.data
-              setYtError(
-                code === 101 || code === 150
-                  ? "The owner doesn't allow this video to play outside YouTube. Try another link."
-                  : code === 100
-                  ? 'That video was not found or is private.'
-                  : code === 2
-                  ? "That link isn't a valid video."
-                  : 'This video could not be played. Try another link.'
-              )
-            },
-          },
-        })
-      })
-      .catch(() => {
-        if (!cancelled) setYtError("YouTube couldn't load. Check your connection or ad blocker.")
-      })
-
+    if (!isExpanded) return
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
     return () => {
-      cancelled = true
+      document.body.style.overflow = prevOverflow
     }
-  }, [ytSource])
+  }, [isExpanded])
 
-  /* ---- YouTube: read time / length / title twice a second ---- */
+  // Esc collapses the full-screen player back to the mini bar
   useEffect(() => {
-    if (!ytSource) return
-    const id = setInterval(() => {
-      const r = readYouTube(ytPlayerRef.current)
-      if (!r) return
-      setYtNow((prev) =>
-        prev &&
-        prev.state === r.state &&
-        prev.videoId === r.videoId &&
-        prev.title === r.title &&
-        prev.dur === r.dur &&
-        Math.abs(prev.time - r.time) < 0.4
-          ? prev
-          : r
-      )
-    }, 500)
-    return () => clearInterval(id)
-  }, [ytSource])
-
-  /* ---- YouTube: clean up when leaving the page ---- */
-  useEffect(() => {
-    return () => {
-      try {
-        if (ytPlayerRef.current && ytPlayerRef.current.destroy) ytPlayerRef.current.destroy()
-      } catch (err) {
-        /* ignore */
-      }
-      ytPlayerRef.current = null
-      ytReadyRef.current = false
+    if (!isExpanded) return
+    const onKey = (e) => {
+      if (e.key === 'Escape') setIsExpanded(false)
     }
-  }, [])
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [isExpanded])
 
   /* ---------------- actions ---------------- */
   const handleFiles = (e) => {
@@ -1012,11 +1327,13 @@ export default function Music() {
     e.target.value = ''
     if (files.length === 0) return
 
+    const now = Date.now()
+
     // 1) show the songs right away
-    const newTracks = files.map((file) => {
+    const newTracks = files.map((file, i) => {
       const url = URL.createObjectURL(file)
       return {
-        id: url,
+        id: `${now + i}-${Math.random().toString(36).slice(2, 8)}`,
         file,
         name: file.name.replace(/\.[^/.]+$/, ''),
         artist: '',
@@ -1024,11 +1341,30 @@ export default function Music() {
         cover: null,
         duration: 0,
         uploaded: true,
+        addedAt: now + i,
       }
     })
     setTracks((prev) => [...prev, ...newTracks])
 
-    // 2) fill in cover photo + duration in the background
+    // 2) save each song so it is still here after logout / refresh
+    newTracks.forEach(async (t) => {
+      try {
+        await dbPut({
+          id: t.id,
+          owner: storageKey,
+          name: t.name,
+          blob: t.file,
+          addedAt: t.addedAt,
+        })
+      } catch (err) {
+        console.warn('Could not save song', err)
+        setAudioError(
+          `"${t.name}" could not be saved (storage may be full or blocked). It will disappear when you refresh.`
+        )
+      }
+    })
+
+    // 3) fill in cover photo + duration in the background
     newTracks.forEach(async (t) => {
       const [cover, dur] = await Promise.all([coverFromFile(t.file), getAudioDuration(t.url)])
       setTracks((prev) =>
@@ -1037,6 +1373,44 @@ export default function Music() {
         )
       )
     })
+  }
+
+  // Delete a song you added (songs from MY_SONGS cannot be deleted here)
+  const removeTrack = async (track) => {
+    if (!track.uploaded) return
+    if (!window.confirm(`Delete "${track.name}"?`)) return
+
+    const removeIndex = tracks.findIndex((t) => t.id === track.id)
+    if (removeIndex === -1) return
+
+    try {
+      await dbDelete(track.id)
+    } catch (err) {
+      console.warn('Could not delete saved song', err)
+    }
+
+    if (removeIndex === activeIndex) {
+      // the song that is playing was deleted: stop the player
+      shouldAutoPlay.current = false
+      const a = audioRef.current
+      if (a) {
+        a.pause()
+        a.removeAttribute('src')
+        a.load()
+      }
+      setIsPlaying(false)
+      setCurrentTime(0)
+      setDuration(0)
+      setActiveIndex(-1)
+      setIsExpanded(false)
+    } else if (removeIndex < activeIndex) {
+      setActiveIndex(activeIndex - 1)
+    }
+
+    setTracks((prev) => prev.filter((t) => t.id !== track.id))
+
+    if (track.url && track.url.startsWith('blob:')) URL.revokeObjectURL(track.url)
+    if (track.cover && track.cover.startsWith('blob:')) URL.revokeObjectURL(track.cover)
   }
 
   const togglePlay = () => {
@@ -1066,66 +1440,35 @@ export default function Music() {
     selectTrack(next)
   }
 
-  const playYouTubeLink = (link) => {
-    const parsed = parseYouTubeLink(link)
-    if (!parsed) {
-      setYtError('Paste a valid YouTube video or playlist link.')
-      return
+  // X button: stop the song and close the bottom player
+  const closePlayer = () => {
+    shouldAutoPlay.current = false
+    const a = audioRef.current
+    if (a) {
+      a.pause()
+      a.removeAttribute('src')
+      a.load()
     }
-    setYtError('')
-    setYtNow(null)
-    setYtSource({ ...parsed })
-  }
-
-  const loadYouTube = (e) => {
-    e.preventDefault()
-    playYouTubeLink(youtubeInput)
+    setIsPlaying(false)
+    setCurrentTime(0)
+    setDuration(0)
+    setAudioError('')
+    setActiveIndex(-1)
+    setIsExpanded(false)
   }
 
   /* ---------------- bottom bar ---------------- */
-  // Shows the YouTube song or your own song, whichever is playing
   let bar = null
-  if (activeSource === 'youtube' && ytNow) {
-    const title = ytNow.title || 'YouTube'
-    const isPlaylist = !!(ytSource && ytSource.listId)
-    bar = {
-      title,
-      coverTrack: {
-        name: title,
-        cover: ytNow.videoId ? `https://i.ytimg.com/vi/${ytNow.videoId}/mqdefault.jpg` : null,
-      },
-      playing: ytNow.state === 1 || ytNow.state === 3,
-      time: ytNow.time,
-      dur: ytNow.dur,
-      onToggle: () => {
-        const p = ytPlayerRef.current
-        if (!p) return
-        try {
-          if (p.getPlayerState() === 1) p.pauseVideo()
-          else p.playVideo()
-        } catch (err) {
-          /* ignore */
-        }
-      },
-      onSeek: (t) => {
-        try {
-          ytPlayerRef.current.seekTo(t, true)
-          setYtNow((prev) => (prev ? { ...prev, time: t } : prev))
-        } catch (err) {
-          /* ignore */
-        }
-      },
-      onPrev: isPlaylist ? () => ytPlayerRef.current && ytPlayerRef.current.previousVideo() : null,
-      onNext: isPlaylist ? () => ytPlayerRef.current && ytPlayerRef.current.nextVideo() : null,
-    }
-  } else if (activeSource === 'local' && activeTrack) {
+  if (activeTrack) {
     bar = {
       title: activeTrack.name,
+      artist: activeTrack.artist,
       coverTrack: activeTrack,
       playing: isPlaying,
       time: currentTime,
       dur: duration,
       onToggle: togglePlay,
+      onClose: closePlayer,
       onSeek: (t) => {
         if (!audioRef.current) return
         audioRef.current.currentTime = t
@@ -1136,9 +1479,6 @@ export default function Music() {
     }
   }
   const progressPct = bar && bar.dur ? Math.min(100, (bar.time / bar.dur) * 100) : 0
-
-  const featuredActive = (link) =>
-    !!ytSource && youtubeInput.trim() === link
 
   return (
     <div className={`music-panel${bar ? ' music-panel--has-bar' : ''}`}>
@@ -1151,10 +1491,7 @@ export default function Music() {
         src={activeTrack ? activeTrack.url : undefined}
         onPlay={() => {
           setIsPlaying(true)
-          setActiveSource('local')
           setAudioError('')
-          // your own song started: stop YouTube so they don't overlap
-          pauseYouTubePlayer(ytPlayerRef)
         }}
         onPause={() => setIsPlaying(false)}
         onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
@@ -1223,6 +1560,8 @@ export default function Music() {
                   tabIndex={0}
                   onClick={activate}
                   onKeyDown={(e) => {
+                    // ignore keys pressed on the buttons inside the row
+                    if (e.target !== e.currentTarget) return
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault()
                       activate()
@@ -1253,7 +1592,7 @@ export default function Music() {
                         <>
                           <Equalizer /> Playing
                         </>
-                      ) : isActive && activeSource === 'local' ? (
+                      ) : isActive ? (
                         'Paused'
                       ) : (
                         track.artist
@@ -1261,7 +1600,25 @@ export default function Music() {
                     </div>
                   </div>
 
-                  <span className="m-track__time">{formatDuration(track.duration)}</span>
+                  <div className="m-track__end">
+                    <span className="m-track__time">{formatDuration(track.duration)}</span>
+                    {track.uploaded ? (
+                      <button
+                        type="button"
+                        className="m-track__delete"
+                        aria-label={`Delete ${track.name}`}
+                        title="Delete song"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          removeTrack(track)
+                        }}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    ) : (
+                      <span className="m-track__delete-spacer" />
+                    )}
+                  </div>
                 </div>
               )
             })}
@@ -1270,66 +1627,29 @@ export default function Music() {
 
         {tracks.some((t) => t.uploaded) && (
           <p className="m-hint">
-            Songs added with the button disappear when you refresh the page. To keep a song, put
-            the file in <code>public/music</code> and add it to <code>MY_SONGS</code>.
+            Songs you add are saved in this browser for your account, so they stay after you log
+            out. Use the trash icon to delete one. Clearing your browser data will remove them.
           </p>
         )}
       </section>
 
-      {/* ---------------- YouTube ---------------- */}
-      <section className="m-card">
-        <div className="m-card__head">
-          <div>
-            <h2 className="m-card__title">YouTube</h2>
-            <p className="m-card__sub">Paste a link, or pick one below. It plays in YouTube's own player.</p>
-          </div>
-        </div>
-
-        <form className="m-form" onSubmit={loadYouTube}>
-          <input
-            type="text"
-            className="m-input"
-            value={youtubeInput}
-            onChange={(e) => setYoutubeInput(e.target.value)}
-            placeholder="Paste a YouTube video or playlist link..."
-          />
-          <button type="submit" className="m-btn m-btn--accent">Load</button>
-        </form>
-
-        {ytError && <p className="m-error" style={{ marginTop: 10, marginBottom: 0 }}>{ytError}</p>}
-
-        {FEATURED_PLAYLISTS.length > 0 && (
-          <div className="m-chips">
-            {FEATURED_PLAYLISTS.map((p) => {
-              const link = p.url || p.uri
-              return (
-                <button
-                  key={link}
-                  type="button"
-                  className={`m-chip${featuredActive(link) ? ' m-chip--active' : ''}`}
-                  onClick={() => {
-                    setYoutubeInput(link)
-                    playYouTubeLink(link)
-                  }}
-                >
-                  {p.name}
-                </button>
-              )
-            })}
-          </div>
-        )}
-
-        {ytSource && (
-          <div className="m-player">
-            <div ref={ytHostRef} className="youtube-embed-host" />
-          </div>
-        )}
-      </section>
-
-      {/* ---------------- Bottom bar ---------------- */}
+      {/* ---------------- Bottom bar (tap it to expand, like Spotify) ---------------- */}
       {bar &&
         createPortal(
-          <div className="music-bar" role="region" aria-label="Now playing">
+          <div
+            className="music-bar"
+            role="button"
+            tabIndex={0}
+            aria-label={`Now playing: ${bar.title}. Tap to open full player.`}
+            onClick={() => setIsExpanded(true)}
+            onKeyDown={(e) => {
+              if (e.target !== e.currentTarget) return
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                setIsExpanded(true)
+              }
+            }}
+          >
             <div className="m-cover music-bar__art">
               <CoverArt track={bar.coverTrack} iconSize={22} />
             </div>
@@ -1343,19 +1663,53 @@ export default function Music() {
 
             <div className="music-bar__controls">
               {bar.onPrev && (
-                <button className="music-bar__skip music-bar__skip--prev" onClick={bar.onPrev} aria-label="Previous">
+                <button
+                  className="music-bar__skip music-bar__skip--prev"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    bar.onPrev()
+                  }}
+                  aria-label="Previous"
+                >
                   <SkipBack size={18} />
                 </button>
               )}
-              <button className="music-bar__play" onClick={bar.onToggle} aria-label={bar.playing ? 'Pause' : 'Play'}>
+              <button
+                className="music-bar__play"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  bar.onToggle()
+                }}
+                aria-label={bar.playing ? 'Pause' : 'Play'}
+              >
                 {bar.playing ? <Pause size={20} /> : <Play size={20} style={{ marginLeft: 2 }} />}
               </button>
               {bar.onNext && (
-                <button className="music-bar__skip" onClick={bar.onNext} aria-label="Next">
+                <button
+                  className="music-bar__skip"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    bar.onNext()
+                  }}
+                  aria-label="Next"
+                >
                   <SkipForward size={18} />
                 </button>
               )}
             </div>
+
+            <button
+              type="button"
+              className="music-bar__close"
+              onClick={(e) => {
+                e.stopPropagation()
+                bar.onClose()
+              }}
+              aria-label="Close player"
+              title="Close player"
+            >
+              <X size={14} />
+            </button>
 
             <input
               type="range"
@@ -1366,9 +1720,112 @@ export default function Music() {
               step="0.1"
               value={Math.min(bar.time, bar.dur || 0)}
               disabled={!bar.dur}
+              onClick={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
               onChange={(e) => bar.onSeek(Number(e.target.value))}
               style={{ '--pct': `${progressPct}%` }}
             />
+          </div>,
+          document.body
+        )}
+
+      {/* ---------------- Full-screen expanded player ---------------- */}
+      {bar &&
+        isExpanded &&
+        createPortal(
+          <div className="music-expanded-overlay" role="dialog" aria-modal="true" aria-label="Now playing">
+            <div
+              className="music-expanded-overlay__bg"
+              style={{ background: bar.coverTrack.cover ? undefined : coverGradient(bar.coverTrack.name) }}
+            >
+              {bar.coverTrack.cover && (
+                <img
+                  src={bar.coverTrack.cover}
+                  alt=""
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              )}
+            </div>
+            <div className="music-expanded-overlay__scrim" />
+
+            <div className="music-expanded">
+              <div className="music-expanded__top">
+                <button
+                  type="button"
+                  className="music-expanded__icon-btn"
+                  onClick={() => setIsExpanded(false)}
+                  aria-label="Minimize player"
+                  title="Minimize"
+                >
+                  <ChevronDown size={22} />
+                </button>
+                <span className="music-expanded__eyebrow">Now Playing</span>
+                <button
+                  type="button"
+                  className="music-expanded__icon-btn"
+                  onClick={bar.onClose}
+                  aria-label="Close player"
+                  title="Close"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="music-expanded__art-wrap">
+                <div className="m-cover music-expanded__art">
+                  <CoverArt track={bar.coverTrack} iconSize={64} />
+                </div>
+              </div>
+
+              <div className="music-expanded__info">
+                <div className="music-expanded__title">{bar.title}</div>
+                {bar.artist && <div className="music-expanded__artist">{bar.artist}</div>}
+              </div>
+
+              <div className="music-expanded__seek-wrap">
+                <input
+                  type="range"
+                  className="music-expanded__seek"
+                  aria-label="Seek"
+                  min="0"
+                  max={bar.dur || 0}
+                  step="0.1"
+                  value={Math.min(bar.time, bar.dur || 0)}
+                  disabled={!bar.dur}
+                  onChange={(e) => bar.onSeek(Number(e.target.value))}
+                  style={{ '--pct': `${progressPct}%` }}
+                />
+                <div className="music-expanded__times">
+                  <span>{formatDuration(bar.time)}</span>
+                  <span>{formatDuration(bar.dur)}</span>
+                </div>
+              </div>
+
+              <div className="music-expanded__controls">
+                {bar.onPrev ? (
+                  <button className="music-expanded__skip" onClick={bar.onPrev} aria-label="Previous">
+                    <SkipBack size={26} />
+                  </button>
+                ) : (
+                  <span style={{ width: 26 }} />
+                )}
+                <button
+                  className="music-expanded__play"
+                  onClick={bar.onToggle}
+                  aria-label={bar.playing ? 'Pause' : 'Play'}
+                >
+                  {bar.playing ? <Pause size={28} /> : <Play size={28} style={{ marginLeft: 3 }} />}
+                </button>
+                {bar.onNext ? (
+                  <button className="music-expanded__skip" onClick={bar.onNext} aria-label="Next">
+                    <SkipForward size={26} />
+                  </button>
+                ) : (
+                  <span style={{ width: 26 }} />
+                )}
+              </div>
+            </div>
           </div>,
           document.body
         )}

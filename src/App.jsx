@@ -9,12 +9,21 @@ import NameGate from './components/NameGate.jsx'
 import SchedulePanel from './components/SchedulePanel.jsx'
 import Music from './components/Music.jsx'
 
+function getPHDateKey(date = new Date()) {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Manila',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date)
+}
+
 function computeStats(tasks) {
   const total = tasks.length
   const completed = tasks.filter((t) => t.completed).length
   const inProgress = total - completed
-  const todayStr = new Date().toISOString().slice(0, 10)
-  const dueToday = tasks.filter((t) => t.due === todayStr).length
+  const todayStr = getPHDateKey()
+  const dueToday = tasks.filter((t) => !t.completed && t.due === todayStr).length
   const completionRate = total === 0 ? 0 : Math.round((completed / total) * 100)
 
   return [
@@ -35,6 +44,22 @@ function getTasksKey(profile) {
 
 function getNotebookKey(profile) {
   return `taskly-notebook-${slugify(profile)}`
+}
+
+function getMusicKey(profile) {
+  return `taskly-music-${slugify(profile)}`
+}
+
+function getAvatarKey(profile) {
+  return `taskly-avatar-${slugify(profile)}`
+}
+
+function loadAvatar(profile) {
+  try {
+    return localStorage.getItem(getAvatarKey(profile)) || null
+  } catch {
+    return null
+  }
 }
 
 function playCompletionSound() {
@@ -79,7 +104,10 @@ export default function App() {
     const savedProfile = localStorage.getItem('taskly-profile')
     if (savedProfile) {
       const parsedProfile = JSON.parse(savedProfile)
-      setProfile(parsedProfile)
+
+      // avatar is stored separately; fall back to old format (avatar inside profile)
+      const avatar = loadAvatar(parsedProfile) || parsedProfile.avatar || null
+      setProfile({ ...parsedProfile, avatar })
 
       const savedTasks = localStorage.getItem(getTasksKey(parsedProfile))
       if (savedTasks) setTasks(JSON.parse(savedTasks))
@@ -93,17 +121,31 @@ export default function App() {
   }, [tasks, loaded, profile])
 
   const handleNameSubmit = (data) => {
-    localStorage.setItem('taskly-profile', JSON.stringify(data))
-    setProfile(data)
+    // save only the name (and course) in the profile; the avatar has its own key
+    const { avatar: _ignored, ...nameOnly } = data
+    localStorage.setItem('taskly-profile', JSON.stringify(nameOnly))
 
-    const savedTasks = localStorage.getItem(getTasksKey(data))
+    // load this user's saved avatar on login
+    setProfile({ ...nameOnly, avatar: loadAvatar(nameOnly) })
+
+    const savedTasks = localStorage.getItem(getTasksKey(nameOnly))
     setTasks(savedTasks ? JSON.parse(savedTasks) : [])
   }
 
   const handleLogout = () => {
+    // remove only the session profile; tasks, notebook, avatar and music stay saved
     localStorage.removeItem('taskly-profile')
     setProfile(null)
     setTasks([])
+  }
+
+  const handleAvatarChange = (dataUrl) => {
+    setProfile((prev) => ({ ...prev, avatar: dataUrl }))
+    try {
+      localStorage.setItem(getAvatarKey(profile), dataUrl)
+    } catch {
+      alert('Image is too large to save. Try a smaller one.')
+    }
   }
 
   const addTask = (newTask) => {
@@ -137,9 +179,10 @@ export default function App() {
 
   const fullName = `${profile.firstName} ${profile.lastName}`
   const notebookKey = getNotebookKey(profile)
+  const musicKey = getMusicKey(profile)
   const filteredTasks = tasks.filter((t) =>
-  (t.title || '').toLowerCase().includes(searchQuery.toLowerCase())
-)
+    (t.title || '').toLowerCase().includes(searchQuery.toLowerCase())
+  )
 
   return (
     <div className="app-shell">
@@ -147,8 +190,11 @@ export default function App() {
         activePage={activePage}
         onNavigate={setActivePage}
         fullName={fullName}
+        course={profile.course}
         onLogout={handleLogout}
         tasks={tasks}
+        avatarUrl={profile.avatar}
+        onAvatarChange={handleAvatarChange}
       />
 
       <main className="main-content">
@@ -174,7 +220,11 @@ export default function App() {
         {activePage === 'Notebook' && (
           <Notebook storageKey={notebookKey} />
         )}
-        {activePage === 'Music' && <Music />}
+
+        {/* Music stays mounted so the song keeps playing on other pages */}
+        <div style={{ display: activePage === 'Music' ? 'block' : 'none' }}>
+          <Music key={musicKey} storageKey={musicKey} />
+        </div>
       </main>
 
       {isModalOpen && (

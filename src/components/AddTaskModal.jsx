@@ -2,11 +2,20 @@ import { useState } from 'react'
 import { X } from 'lucide-react'
 import { TASK_TYPES, CATEGORY_GROUPS } from '../taskTypes.js'
 
+function getPHDateKey(date = new Date()) {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Manila',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date)
+}
+
 export default function AddTaskModal({ onSubmit, onClose }) {
   const [category, setCategory] = useState(CATEGORY_GROUPS[0])
   const [taskType, setTaskType] = useState(TASK_TYPES[CATEGORY_GROUPS[0]][0].name)
   const [title, setTitle] = useState('')
-  const [due, setDue] = useState(new Date().toISOString().slice(0, 10))
+  const [due, setDue] = useState(getPHDateKey())
   const [dueTime, setDueTime] = useState('09:00')
   const [priority, setPriority] = useState(TASK_TYPES[CATEGORY_GROUPS[0]][0].priority)
 

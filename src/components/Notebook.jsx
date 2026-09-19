@@ -35,10 +35,9 @@ function createTextBox(offset = 0) {
     font: FONT_OPTIONS[0].value,
     color: '#000000',
     fontSize: 22,
-    bold: false,
-    italic: false,
   }
 }
+
 function createPage(title = 'Page 1') {
   return {
     id: Date.now() + Math.random(),
@@ -118,12 +117,12 @@ export default function Notebook({ storageKey }) {
   }, [selectedBoxId])
 
   // Close font menu on any click outside of it
-    useEffect(() => {
-      if (!fontMenuOpen) return
-      const close = () => setFontMenuOpen(false)
-      window.addEventListener('mousedown', close)
-      return () => window.removeEventListener('mousedown', close)
-    }, [fontMenuOpen])
+  useEffect(() => {
+    if (!fontMenuOpen) return
+    const close = () => setFontMenuOpen(false)
+    window.addEventListener('mousedown', close)
+    return () => window.removeEventListener('mousedown', close)
+  }, [fontMenuOpen])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -196,28 +195,69 @@ export default function Notebook({ storageKey }) {
     )
   }
 
-const deleteTextBox = (boxId) => {
-  updatePage(activePage.id, { textBoxes: activePage.textBoxes.filter((b) => b.id !== boxId) })
-  if (selectedBoxId === boxId) setSelectedBoxId(null)
-}
+  const deleteTextBox = (boxId) => {
+    updatePage(activePage.id, { textBoxes: activePage.textBoxes.filter((b) => b.id !== boxId) })
+    if (selectedBoxId === boxId) setSelectedBoxId(null)
+  }
 
   const startDragBox = (e, box) => {
-    e.stopPropagation()
-    e.preventDefault()
-    setSelectedBoxId(box.id)
-
     const point = (ev) => (ev.touches ? ev.touches[0] : ev)
     const start = point(e)
     const startX = start.clientX
     const startY = start.clientY
     const originX = box.x
     const originY = box.y
+    let dragging = false
 
     const onMove = (ev) => {
       const p = point(ev)
       const dx = p.clientX - startX
       const dy = p.clientY - startY
-      updateTextBox(box.id, { x: originX + dx, y: originY + dy })
+
+      if (!dragging && Math.hypot(dx, dy) > 4) {
+        dragging = true
+        setSelectedBoxId(box.id)
+        if (document.activeElement && document.activeElement.blur) {
+          document.activeElement.blur()
+        }
+      }
+
+      if (dragging) {
+        if (ev.cancelable) ev.preventDefault()
+        updateTextBox(box.id, { x: originX + dx, y: originY + dy })
+      }
+    }
+
+    const onEnd = () => {
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onEnd)
+      window.removeEventListener('touchmove', onMove)
+      window.removeEventListener('touchend', onEnd)
+    }
+
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onEnd)
+    window.addEventListener('touchmove', onMove, { passive: false })
+    window.addEventListener('touchend', onEnd)
+  }
+
+  const startResizeBox = (e, box) => {
+    const point = (ev) => (ev.touches ? ev.touches[0] : ev)
+    const start = point(e)
+    const startX = start.clientX
+    const startY = start.clientY
+    const originWidth = box.width
+    const originHeight = box.height
+
+    const onMove = (ev) => {
+      const p = point(ev)
+      const dx = p.clientX - startX
+      const dy = p.clientY - startY
+      if (ev.cancelable) ev.preventDefault()
+      updateTextBox(box.id, {
+        width: Math.max(120, originWidth + dx),
+        height: Math.max(80, originHeight + dy),
+      })
     }
     const onEnd = () => {
       window.removeEventListener('mousemove', onMove)
@@ -382,27 +422,28 @@ const deleteTextBox = (boxId) => {
                 className="notebook-font-picker"
                 onMouseDown={(e) => e.stopPropagation()}
               >
-                        <button
-                          type="button"
-                          className="notebook-font-picker__trigger"
-                          onClick={() => setFontMenuOpen((v) => !v)}
-                        >
-                      <span style={{ fontFamily: selectedBox.font }}>
+                <button
+                  type="button"
+                  className="notebook-font-picker__trigger"
+                  onClick={() => setFontMenuOpen((v) => !v)}
+                >
+                  <span style={{ fontFamily: selectedBox.font }}>
                     {FONT_OPTIONS.find((f) => f.value === selectedBox.font)?.label || 'Font'}
                   </span>
                   <ChevronDown size={14} />
                 </button>
-                    {fontMenuOpen && (
-                      <div className="notebook-font-picker__menu">
+
+                {fontMenuOpen && (
+                  <div className="notebook-font-picker__menu">
                     {FONT_OPTIONS.map((f) => (
                       <button
                         key={f.value}
                         type="button"
                         className={`notebook-font-picker__option${selectedBox.font === f.value ? ' notebook-font-picker__option--active' : ''}`}
-                      onClick={() => {
-                        updateTextBox(selectedBox.id, { font: f.value })
-                        setFontMenuOpen(false)
-                      }}
+                        onClick={() => {
+                          updateTextBox(selectedBox.id, { font: f.value })
+                          setFontMenuOpen(false)
+                        }}
                       >
                         <span className="notebook-font-picker__sample" style={{ fontFamily: f.value }}>
                           Aa
@@ -437,28 +478,42 @@ const deleteTextBox = (boxId) => {
                   title="Custom text color"
                 />
               </div>
-
               <input
                 type="range"
-                min="12"
-                max="48"
+                min="8"
+                max="120"
                 value={selectedBox.fontSize}
                 onChange={(e) => updateTextBox(selectedBox.id, { fontSize: Number(e.target.value) })}
                 className="notebook-brush-size"
                 title="Font size"
               />
+              <input
+                type="number"
+                min="1"
+                value={selectedBox.fontSize}
+                onChange={(e) => {
+                  const val = Number(e.target.value)
+                  if (!Number.isNaN(val) && val > 0) {
+                    updateTextBox(selectedBox.id, { fontSize: val })
+                  }
+                }}
+                className="notebook-font-size-input"
+                title="Exact font size"
+              />
 
               <button
-                className={`notebook-tool${selectedBox.bold ? ' notebook-tool--active' : ''}`}
-                onClick={() => updateTextBox(selectedBox.id, { bold: !selectedBox.bold })}
-                title="Bold this text box"
+                className="notebook-tool"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => document.execCommand('bold')}
+                title="Bold the highlighted text"
               >
                 <Bold size={15} />
               </button>
               <button
-                className={`notebook-tool${selectedBox.italic ? ' notebook-tool--active' : ''}`}
-                onClick={() => updateTextBox(selectedBox.id, { italic: !selectedBox.italic })}
-                title="Italicize this text box"
+                className="notebook-tool"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => document.execCommand('italic')}
+                title="Italicize the highlighted text"
               >
                 <Italic size={15} />
               </button>
@@ -541,7 +596,7 @@ const deleteTextBox = (boxId) => {
       )}
 
       {/* Single combined sheet — text boxes + drawing layer both always visible together */}
-      <div className="notebook-paper notebook-page-fade" key={activePage.id}>
+      <div className="notebook-paper">
         <div className="notebook-paper__holes">
           {Array.from({ length: 12 }).map((_, i) => (
             <span key={i} className="notebook-hole" />
@@ -567,6 +622,18 @@ const deleteTextBox = (boxId) => {
                 e.stopPropagation()
                 setSelectedBoxId(box.id)
               }}
+              onMouseDown={(e) => {
+                if (e.target.closest('.notebook-textbox__resize')) return
+                const areaEl = e.target.closest('.notebook-textbox__area')
+                if (areaEl && document.activeElement === areaEl) return
+                startDragBox(e, box)
+              }}
+              onTouchStart={(e) => {
+                if (e.target.closest('.notebook-textbox__resize')) return
+                const areaEl = e.target.closest('.notebook-textbox__area')
+                if (areaEl && document.activeElement === areaEl) return
+                startDragBox(e, box)
+              }}
             >
               {selectedBoxId === box.id && (
                 <div
@@ -587,27 +654,45 @@ const deleteTextBox = (boxId) => {
                   </button>
                 </div>
               )}
-          <div
-            contentEditable
-            suppressContentEditableWarning
-            ref={(el) => {
-              if (el && el.innerHTML === '' && box.html) {
-                el.innerHTML = box.html
-              }
-            }}
-            className="notebook-textbox__area"
-            data-placeholder="Type here..."
-            style={{
-              fontFamily: box.font,
-              color: box.color,
-              fontSize: box.fontSize,
-              fontWeight: box.bold ? 700 : 400,
-              fontStyle: box.italic ? 'italic' : 'normal',
-              height: selectedBoxId === box.id ? 'calc(100% - 24px)' : '100%',
-            }}
-            onInput={(e) => updateTextBox(box.id, { html: e.currentTarget.innerHTML })}
-            onFocus={() => setSelectedBoxId(box.id)}
-          />
+              <div
+                contentEditable
+                suppressContentEditableWarning
+                ref={(el) => {
+                  if (el && el.innerHTML === '' && box.html) {
+                    el.innerHTML = box.html
+                  }
+                }}
+                className="notebook-textbox__area"
+                data-placeholder="Type here..."
+                style={{
+                  fontFamily: box.font,
+                  color: box.color,
+                  fontSize: box.fontSize,
+                  minHeight: selectedBoxId === box.id ? 'calc(100% - 24px)' : '100%',
+                }}
+                onInput={(e) => {
+                  const el = e.currentTarget
+                  const contentHeight = el.scrollHeight + 24
+                  updateTextBox(box.id, {
+                    html: el.innerHTML,
+                    height: Math.max(box.height, contentHeight, 140),
+                  })
+                }}
+                onFocus={() => setSelectedBoxId(box.id)}
+              />
+              {selectedBoxId === box.id && (
+                <div
+                  className="notebook-textbox__resize"
+                  onMouseDown={(e) => {
+                    e.stopPropagation()
+                    startResizeBox(e, box)
+                  }}
+                  onTouchStart={(e) => {
+                    e.stopPropagation()
+                    startResizeBox(e, box)
+                  }}
+                />
+              )}
             </div>
           ))}
 

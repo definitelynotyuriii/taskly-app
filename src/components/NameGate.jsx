@@ -1,13 +1,184 @@
 import { useState } from 'react'
 
+/* Edit this list to match the courses/programs your users pick from.
+   The value shown in the dropdown and the value saved are the same string. */
+const COURSES = [
+  // A
+  'Bachelor of Science in Accountancy',
+  'Bachelor of Science in Accounting Technology',
+  'Bachelor of Science in Agricultural Engineering',
+  'Bachelor of Science in Agricultural and Biosystems Engineering',
+  'Bachelor of Science in Agriculture',
+  'Bachelor of Science in Agribusiness',
+  'Bachelor of Science in Agribusiness Economics',
+  'Bachelor of Arts in Anthropology',
+  'Bachelor of Science in Applied Mathematics',
+  'Bachelor of Science in Architecture',
+  'Bachelor of Science in Aerospace Engineering',
+
+  // B
+  'Bachelor of Science in Biology',
+  'Bachelor of Science in Business Administration',
+  'Bachelor of Science in Business Management',
+  'Bachelor of Arts in Broadcasting',
+  'Bachelor of Early Childhood Education',
+  'Bachelor of Elementary Education',
+  'Bachelor of Fine Arts',
+
+  // C
+  'Bachelor of Science in Chemical Engineering',
+  'Bachelor of Science in Chemistry',
+  'Bachelor of Science in Civil Engineering',
+  'Bachelor of Arts in Communication',
+  'Bachelor of Science in Computer Engineering',
+  'Bachelor of Science in Computer Science',
+  'Bachelor of Science in Computer Technology',
+  'Bachelor of Science in Criminology',
+  'Bachelor of Science in Customs Administration',
+
+  // D
+  'Bachelor of Science in Data Science',
+  'Doctor of Dental Medicine',
+  'Bachelor of Arts in Development Communication',
+  'Bachelor of Arts in Development Studies',
+  'Doctor of Medicine',
+  'Doctor of Veterinary Medicine',
+
+  // E
+  'Bachelor of Science in Economics',
+  'Bachelor of Science in Electrical Engineering',
+  'Bachelor of Science in Electronics Engineering',
+  'Bachelor of Arts in English',
+  'Bachelor of Arts in English Language Studies',
+  'Bachelor of Science in Entrepreneurship',
+  'Bachelor of Science in Environmental Science',
+  'Bachelor of Science in Entertainment and Multimedia Computing',
+
+  // F
+  'Bachelor of Science in Fisheries',
+  'Bachelor of Fine Arts',
+  'Bachelor of Science in Food Technology',
+  'Bachelor of Science in Forestry',
+  'Bachelor of Science in Forensic Science',
+
+  // G
+  'Bachelor of Science in Geodetic Engineering',
+  'Bachelor of Science in Geology',
+  'Bachelor of Science in Guidance and Counseling',
+
+  // H
+  'Bachelor of Science in Health Science',
+  'Bachelor of Science in Hospitality Management',
+  'Bachelor of Science in Hotel and Restaurant Management',
+  'Bachelor of Science in Human Resource Management',
+
+  // I
+  'Bachelor of Science in Industrial Engineering',
+  'Bachelor of Science in Industrial Technology',
+  'Bachelor of Science in Information Systems',
+  'Bachelor of Science in Information Technology',
+  'Bachelor of Science in Interior Design',
+  'Bachelor of Arts in International Studies',
+  'Bachelor of Arts in Islamic Studies',
+
+  // J
+  'Bachelor of Arts in Journalism',
+  'Juris Doctor',
+
+  // K
+  'Bachelor of Science in Kinesiology',
+
+  // L
+  'Bachelor of Science in Landscape Architecture',
+  'Bachelor of Science in Legal Management',
+  'Bachelor of Library and Information Science',
+  'Bachelor of Arts in Literature',
+
+  // M
+  'Bachelor of Science in Management Accounting',
+  'Bachelor of Science in Marine Biology',
+  'Bachelor of Science in Marine Transportation',
+  'Bachelor of Science in Marketing',
+  'Bachelor of Science in Mathematics',
+  'Bachelor of Science in Mechanical Engineering',
+  'Bachelor of Science in Medical Laboratory Science',
+  'Bachelor of Science in Medical Technology',
+  'Bachelor of Science in Midwifery',
+  'Bachelor of Science in Mining Engineering',
+  'Bachelor of Multimedia Arts',
+  'Bachelor of Music',
+
+  // N
+  'Bachelor of Science in Nursing',
+  'Bachelor of Science in Nutrition and Dietetics',
+
+  // O
+  'Bachelor of Science in Occupational Therapy',
+  'Bachelor of Science in Office Administration',
+  'Doctor of Optometry',
+
+  // P
+  'Bachelor of Science in Pharmacy',
+  'Bachelor of Arts in Philosophy',
+  'Bachelor of Physical Education',
+  'Bachelor of Science in Physical Therapy',
+  'Bachelor of Science in Physics',
+  'Bachelor of Arts in Political Science',
+  'Bachelor of Science in Psychology',
+  'Bachelor of Science in Public Administration',
+  'Bachelor of Science in Public Management',
+
+  // Q
+  'Bachelor of Science in Quantity Surveying',
+
+  // R
+  'Bachelor of Science in Radiologic Technology',
+  'Bachelor of Science in Real Estate Management',
+  'Bachelor of Science in Respiratory Therapy',
+  'Bachelor of Science in Robotics Engineering',
+
+  // S
+  'Bachelor of Science in Sanitary Engineering',
+  'Bachelor of Science in Social Work',
+  'Bachelor of Arts in Sociology',
+  'Bachelor of Science in Software Engineering',
+  'Bachelor of Special Needs Education',
+  'Bachelor of Science in Speech-Language Pathology',
+  'Bachelor of Science in Sports Science',
+  'Bachelor of Science in Statistics',
+
+  // T
+  'Bachelor of Teacher Education',
+  'Bachelor of Technical-Vocational Teacher Education',
+  'Bachelor of Science in Tourism Management',
+  'Bachelor of Technology and Livelihood Education',
+  'Bachelor of Theology',
+
+  // U
+  'Bachelor of Science in Urban and Regional Planning',
+
+  // V
+  'Doctor of Veterinary Medicine',
+
+  // W
+  'Bachelor of Science in Wildlife Management',
+
+  // Z
+  'Bachelor of Science in Zoology',
+
+  // Other
+  'Other',
+];
+
 export default function NameGate({ onSubmit }) {
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
+  const [course, setCourse] = useState('')
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (!firstName.trim() || !lastName.trim()) return
-    onSubmit({ firstName: firstName.trim(), lastName: lastName.trim() })
+    if (!firstName.trim() || !lastName.trim() || !course) return
+    onSubmit({ firstName: firstName.trim(), lastName: lastName.trim(), course })
   }
 
   return (
@@ -82,6 +253,24 @@ export default function NameGate({ onSubmit }) {
               onChange={(e) => setLastName(e.target.value)}
               placeholder="Dela Cruz"
             />
+          </label>
+
+          <label className="login-field">
+            <span>Course</span>
+            <select
+              className="login-select"
+              value={course}
+              onChange={(e) => setCourse(e.target.value)}
+            >
+              <option value="" disabled>
+                Select your course
+              </option>
+              {COURSES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
           </label>
 
           <button type="submit" className="primary-button login-submit">
