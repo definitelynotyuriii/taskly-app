@@ -44,6 +44,19 @@ const MY_SONGS = [
     file: '/music/ROBBERY.mp3',
     cover: '/imgs/juicewrld2.jpg',   
   },
+  {
+    name: 'Die for you',
+    artist: 'The Weeknd',
+    file: '/music/DIEFORYOU.mp3',
+    cover: '/imgs/theweeknd2.jpg',   
+  },
+    {
+    name: 'Blinding Lights',
+    artist: 'The Weeknd',
+    file: '/music/BLINDINGLIGHTS.mp3',
+    cover: '/imgs/theweeknd1.jpg',   
+  },
+
 ]
 
 /* ------------------------------------------------------------------ */
