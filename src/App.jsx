@@ -98,7 +98,7 @@ export default function App() {
   const [profile, setProfile] = useState(null)
   const [loaded, setLoaded] = useState(false)
   const [toast, setToast] = useState(null)
-  const [searchQuery, setSearchQuery] = useState('')
+    const [hasMusicBar, setHasMusicBar] = useState(false)
 
   useEffect(() => {
     const savedProfile = localStorage.getItem('taskly-profile')
@@ -197,7 +197,7 @@ export default function App() {
         onAvatarChange={handleAvatarChange}
       />
 
-      <main className="main-content">
+        <main className="main-content" style={hasMusicBar ? { paddingBottom: 130 } : undefined}>
         <Header
           dateLabel="THURSDAY · 17 SEPTEMBER"
           name={profile.firstName}
@@ -223,7 +223,7 @@ export default function App() {
 
         {/* Music stays mounted so the song keeps playing on other pages */}
         <div style={{ display: activePage === 'Music' ? 'block' : 'none' }}>
-          <Music key={musicKey} storageKey={musicKey} />
+          <Music key={musicKey} storageKey={musicKey} onBarChange={setHasMusicBar} />
         </div>
       </main>
 

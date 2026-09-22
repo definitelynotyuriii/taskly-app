@@ -24,6 +24,7 @@
 
 html {
   background: var(--bg-page);
+  overflow-x: hidden;
 }
 
 body {
@@ -4005,43 +4006,53 @@ button {
 }
 
 /* ---------- Phone Format ---------- */
-/* ---------- Full mobile pass (≤480px) ---------- */
 
-@media (max-width: 480px) {
+
+@media (max-width: 720px) {
   .main-content {
     padding: 16px;
-    gap: 20px;
+    gap: 18px;
   }
 
   .page-header {
     flex-direction: column;
     align-items: stretch;
-    gap: 12px;
+    gap: 10px;
   }
 
   .page-header__title {
-    font-size: 21px;
+    font-size: 20px;
+  }
+
+  .page-header__quote {
+    display: none;
   }
 
   .page-header__actions {
     flex-wrap: wrap;
+    gap: 8px;
   }
 
   .search-field {
     width: 100%;
+    order: 3;
+  }
+
+  .primary-button span {
+    display: none;
   }
 
   .stats-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
     gap: 10px;
   }
 
   .stat-card {
-    padding: 18px 18px;
+    padding: 16px;
   }
 
   .stat-card__value {
-    font-size: 26px;
+    font-size: 24px;
   }
 
   .content-columns {
@@ -4050,34 +4061,49 @@ button {
   }
 
   .task-card {
-    padding: 18px 16px 8px;
+    padding: 16px 14px 8px;
+  }
+
+  .task-card__header h2 {
+    font-size: 15px;
   }
 
   .task-row {
+    padding: 10px 0;
     gap: 8px;
-    padding: 12px 0;
   }
 
   .task-row__title {
-    font-size: 13.5px;
+    font-size: 13px;
+  }
+
+  .task-row__meta {
+    font-size: 11px;
   }
 
   .priority-pill {
     padding: 4px 8px;
-    font-size: 11px;
+    font-size: 10.5px;
   }
 
   .filter-row {
     flex-direction: column;
     align-items: stretch;
+    gap: 8px;
   }
 
   .filter-tabs {
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .filter-selects {
     flex-wrap: wrap;
+  }
+
+  .filter-selects select {
+    flex: 1;
+    min-width: 120px;
   }
 
   .schedule-card,
@@ -4087,7 +4113,11 @@ button {
 
   .calendar-day {
     height: 26px;
-    font-size: 11.5px;
+    font-size: 11px;
+  }
+
+  .calendar-grid__weekday {
+    font-size: 9.5px;
   }
 
   .world-clock {
@@ -4112,22 +4142,35 @@ button {
     order: 0;
   }
 
+  .agenda-item__title {
+    font-size: 13px;
+  }
+
+  .agenda-item__meta {
+    font-size: 11px;
+  }
+
   .modal-card {
     width: calc(100vw - 32px);
-    padding: 20px;
+    padding: 18px;
   }
 
   .modal-row {
     flex-direction: column;
+    gap: 8px;
   }
 
   .notif-panel {
+    width: calc(100vw - 40px);
+    right: -4px;
+  }
+
+  .avatar-modal {
     width: calc(100vw - 48px);
-    right: -8px;
   }
 
   .notebook-paper {
-    min-height: 400px;
+    min-height: 380px;
     flex-direction: column;
   }
 
@@ -4136,29 +4179,70 @@ button {
   }
 
   .notebook-textarea {
-    padding: 14px 14px 14px 20px;
-    font-size: 18px;
-    line-height: 26px;
+    padding: 12px 14px;
+    font-size: 17px;
+    line-height: 24px;
   }
 
   .notebook-toolbar-top {
     flex-direction: column;
     align-items: stretch;
+    gap: 8px;
+  }
+
+  .notebook-pages {
+    overflow-x: auto;
+    flex-wrap: nowrap;
   }
 
   .notebook-draw__toolbar {
     gap: 8px;
+    padding: 8px;
+  }
+
+  .notebook-font-picker__trigger {
+    min-width: 100px;
   }
 
   .login-card {
     border-radius: 16px;
   }
 
+  .baguio-scene {
+    padding: 28px 24px;
+    min-height: 220px;
+  }
+
   .baguio-scene__content h2 {
-    font-size: 26px;
+    font-size: 24px;
   }
 
   .login-form-side {
     padding: 24px 20px;
+  }
+
+  .login-field input,
+  .login-select {
+    padding: 11px 12px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 420px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .page-header__title {
+    font-size: 18px;
+  }
+
+  .task-row {
+    flex-wrap: wrap;
+  }
+
+  .priority-pill {
+    order: 3;
+    margin-left: 32px;
   }
 }

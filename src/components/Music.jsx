@@ -1220,7 +1220,7 @@ const musicStyles = `
 }
 `
 
-export default function Music({ storageKey = 'guest' }) {
+export default function Music({ storageKey = 'guest', onBarChange }) {
   const [tracks, setTracks] = useState(() => MY_SONGS.map(makeBuiltInTrack))
   const [activeIndex, setActiveIndex] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
@@ -1330,6 +1330,11 @@ export default function Music({ storageKey = 'guest' }) {
       shouldAutoPlay.current = false
       audioRef.current.play().catch(() => setIsPlaying(false))
     }
+
+  // Tell the parent app whether the mini player bar is currently showing
+  useEffect(() => {
+    onBarChange?.(!!activeTrack)
+  }, [activeTrack, onBarChange])
   }, [activeTrack])
 
   // Lock page scroll while the full-screen player is open
