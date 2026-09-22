@@ -154,9 +154,7 @@ button {
 /* ================================================= */
 /* ---------- Sidebar (redesigned, merged) ---------- */
 /* ================================================= */
-.music-bar {
-  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-}
+
 .sidebar {
   width: 260px;
   flex-shrink: 0;

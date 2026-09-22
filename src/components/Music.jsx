@@ -743,10 +743,11 @@ const musicStyles = `
 }
 
 /* ---------- bottom bar ---------- */
+/* ---------- bottom bar ---------- */
 .music-bar {
   position: fixed;
   left: 50%;
-  bottom: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
   transform: translateX(-50%);
   width: min(640px, calc(100% - 24px));
   box-sizing: border-box;
