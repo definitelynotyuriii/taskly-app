@@ -205,12 +205,12 @@ export default function NameGate({ onSubmit }) {
           <div className="baguio-scene__mist" />
 
           {/* Back mountain layer */}
-          <svg className="baguio-scene__mountains" viewBox="0 0 300 200" preserveAspectRatio="none" style={{ bottom: 60, opacity: 0.5 }}>
+          <svg className="baguio-scene__mountains" viewBox="0 0 300 200" preserveAspectRatio="none" style={{ bottom: 60, opacity: 0.5, height: '55%' }}>
             <path d="M0,140 L40,90 L80,130 L120,70 L160,120 L200,80 L240,130 L270,100 L300,140 L300,200 L0,200 Z" fill="#1c221f" />
           </svg>
 
           {/* Front mountain layer */}
-          <svg className="baguio-scene__mountains" viewBox="0 0 300 200" preserveAspectRatio="none" style={{ bottom: 20 }}>
+          <svg className="baguio-scene__mountains" viewBox="0 0 300 200" preserveAspectRatio="none" style={{ bottom: 20, height: '65%' }}>
             <path d="M0,170 L50,110 L90,150 L140,80 L190,150 L230,100 L270,150 L300,120 L300,200 L0,200 Z" fill="#141a16" />
           </svg>
 
