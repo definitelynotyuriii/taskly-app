@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
-import { Search, Bell, Plus, Quote } from 'lucide-react'
+import { Search, Bell, Plus, Quote, Music as MusicIcon } from 'lucide-react'
+import { MY_SONGS } from './Music'
 
 function getPHDateKey(date = new Date()) {
   return new Intl.DateTimeFormat('en-CA', {
@@ -72,6 +73,24 @@ export default function Header({ dateLabel, name, onAddTask, tasks, searchQuery,
 
   const quote = useMemo(() => QUOTES[getDailyIndex(QUOTES.length)], [])
 
+  const q = searchQuery.trim().toLowerCase()
+  const taskMatches = useMemo(
+    () => (q ? tasks.filter((t) => t.title.toLowerCase().includes(q)).slice(0, 5) : []),
+    [q, tasks]
+  )
+  const songMatches = useMemo(
+    () =>
+      q
+        ? MY_SONGS.filter(
+            (s) =>
+              s.name.toLowerCase().includes(q) ||
+              (s.artist || '').toLowerCase().includes(q)
+          ).slice(0, 5)
+        : [],
+    [q]
+  )
+  const showResults = q.length > 0 && (taskMatches.length > 0 || songMatches.length > 0)
+
   return (
     <header className="page-header">
       <div>
@@ -85,14 +104,52 @@ export default function Header({ dateLabel, name, onAddTask, tasks, searchQuery,
       </div>
 
       <div className="page-header__actions">
-        <div className="search-field">
+        <div className="search-field" style={{ position: 'relative' }}>
           <Search size={16} />
           <input
             type="text"
-            placeholder="Search tasks..."
+            placeholder="Search tasks or songs..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
           />
+
+          {showResults && (
+            <div
+              className="notif-panel"
+              style={{ top: 'calc(100% + 8px)', left: 0, right: 'auto', width: 260 }}
+            >
+              {taskMatches.length > 0 && (
+                <>
+                  <div className="notif-panel__header">Tasks</div>
+                  <ul className="notif-list">
+                    {taskMatches.map((t) => (
+                      <li key={t.id} className="notif-item">
+                        <span className="notif-item__dot" />
+                        <span className="notif-item__title">{t.title}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+
+              {songMatches.length > 0 && (
+                <>
+                  <div className="notif-panel__header">Songs</div>
+                  <ul className="notif-list">
+                    {songMatches.map((s) => (
+                      <li key={s.file} className="notif-item">
+                        <MusicIcon size={14} />
+                        <div>
+                          <span className="notif-item__title">{s.name}</span>
+                          <span className="notif-item__meta">{s.artist}</span>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="notif-wrapper">

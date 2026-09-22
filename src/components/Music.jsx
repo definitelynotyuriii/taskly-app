@@ -31,7 +31,7 @@ import {
                     MP3 file. If there is none, it shows a colored square.
       These cannot be deleted from the app (remove the line to remove them).
    ================================================================== */
-const MY_SONGS = [
+export const MY_SONGS = [
   {
     name: 'All Girls are the Same',
     artist: 'Juice Wrld',
@@ -55,6 +55,24 @@ const MY_SONGS = [
     artist: 'The Weeknd',
     file: '/music/BLINDINGLIGHTS.mp3',
     cover: '/imgs/theweeknd1.jpg',   
+  },
+  {
+    name: 'Sparks',
+    artist: 'Coldplay',
+    file: '/music/SPARKS.mp3',
+    cover: '/imgs/coldplay2.jpg',
+  },
+  {
+    name: 'The Scientist',
+    artist: 'Coldplay',
+    file: '/music/SCIENTIST.mp3',
+    cover: '/imgs/coldplay1.jpg',
+  },
+  {
+    name: 'Circles',
+    artist: 'Post Malone',
+    file: '/music/CIRCLES.mp3',
+    cover: '/imgs/postmalone1.jpg',
   },
 
 ]
