@@ -1160,7 +1160,7 @@ button {
   }
 }
 /* ---------- Responsive ---------- */
-/*
+
 @media (max-width: 720px) {
   .app-shell {
     flex-direction: column;
