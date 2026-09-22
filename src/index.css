@@ -4003,3 +4003,162 @@ button {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* ---------- Phone Format ---------- */
+/* ---------- Full mobile pass (≤480px) ---------- */
+
+@media (max-width: 480px) {
+  .main-content {
+    padding: 16px;
+    gap: 20px;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .page-header__title {
+    font-size: 21px;
+  }
+
+  .page-header__actions {
+    flex-wrap: wrap;
+  }
+
+  .search-field {
+    width: 100%;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .stat-card {
+    padding: 18px 18px;
+  }
+
+  .stat-card__value {
+    font-size: 26px;
+  }
+
+  .content-columns {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .task-card {
+    padding: 18px 16px 8px;
+  }
+
+  .task-row {
+    gap: 8px;
+    padding: 12px 0;
+  }
+
+  .task-row__title {
+    font-size: 13.5px;
+  }
+
+  .priority-pill {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+
+  .filter-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-tabs {
+    overflow-x: auto;
+  }
+
+  .filter-selects {
+    flex-wrap: wrap;
+  }
+
+  .schedule-card,
+  .agenda-card {
+    padding: 16px 14px 18px;
+  }
+
+  .calendar-day {
+    height: 26px;
+    font-size: 11.5px;
+  }
+
+  .world-clock {
+    flex-wrap: wrap;
+    padding: 8px;
+    gap: 4px;
+  }
+
+  .world-clock__select {
+    font-size: 11px;
+    flex-basis: 100%;
+    order: 2;
+  }
+
+  .world-clock__time {
+    font-size: 13px;
+    order: 1;
+    margin-left: auto;
+  }
+
+  .world-clock__dot {
+    order: 0;
+  }
+
+  .modal-card {
+    width: calc(100vw - 32px);
+    padding: 20px;
+  }
+
+  .modal-row {
+    flex-direction: column;
+  }
+
+  .notif-panel {
+    width: calc(100vw - 48px);
+    right: -8px;
+  }
+
+  .notebook-paper {
+    min-height: 400px;
+    flex-direction: column;
+  }
+
+  .notebook-paper__holes {
+    display: none;
+  }
+
+  .notebook-textarea {
+    padding: 14px 14px 14px 20px;
+    font-size: 18px;
+    line-height: 26px;
+  }
+
+  .notebook-toolbar-top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .notebook-draw__toolbar {
+    gap: 8px;
+  }
+
+  .login-card {
+    border-radius: 16px;
+  }
+
+  .baguio-scene__content h2 {
+    font-size: 26px;
+  }
+
+  .login-form-side {
+    padding: 24px 20px;
+  }
+}
