@@ -179,18 +179,15 @@ button {
 }
 
 @media (max-width: 720px) {
-  .app-shell {
-    flex-direction: column;
-  }
-
   .sidebar {
     width: 100%;
     flex-direction: row;
+    flex-wrap: wrap;              /* add this */
     align-items: center;
-    overflow-x: auto;
+    overflow-x: visible;          /* change from auto */
     border-right: none;
     border-bottom: 1px solid var(--border-soft);
-    gap: 16px;
+    gap: 12px;
     padding: 12px 16px;
   }
 
@@ -202,15 +199,22 @@ button {
     display: none;
   }
 
-  .brand,
-  .user-card-wrapper,
-  .nav-group {
+  .brand {
     flex-shrink: 0;
+  }
+
+  .user-card-wrapper {
+    flex-shrink: 0;
+    order: 1;
   }
 
   .nav-group {
     flex-direction: row;
     gap: 4px;
+    flex-shrink: 0;
+    flex-basis: 100%;             /* forces it onto its own line */
+    order: 2;
+    justify-content: flex-start;
   }
 
   .user-card-wrapper {
@@ -4287,8 +4291,7 @@ button {
 }
 
 .baguio-scene__mist {
-  bottom: 60px;
-  height: 40px;
+  display: none;
 }
 
   .login-form-side {
