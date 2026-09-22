@@ -24,7 +24,6 @@
 
 html {
   background: var(--bg-page);
-  overflow-x: hidden;
 }
 
 body {
@@ -4208,14 +4207,26 @@ button {
     border-radius: 16px;
   }
 
-  .baguio-scene {
-    padding: 28px 24px;
-    min-height: 220px;
-  }
+.baguio-scene {
+  padding: 24px 20px 20px;
+  min-height: 280px;
+}
 
-  .baguio-scene__content h2 {
-    font-size: 24px;
-  }
+.baguio-scene__content h2 {
+  font-size: 22px;
+}
+
+.baguio-scene__moon {
+  width: 34px;
+  height: 34px;
+  top: 20px;
+  right: 24px;
+}
+
+.baguio-scene__mist {
+  bottom: 60px;
+  height: 40px;
+}
 
   .login-form-side {
     padding: 24px 20px;

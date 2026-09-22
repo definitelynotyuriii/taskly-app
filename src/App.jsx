@@ -98,7 +98,8 @@ export default function App() {
   const [profile, setProfile] = useState(null)
   const [loaded, setLoaded] = useState(false)
   const [toast, setToast] = useState(null)
-    const [hasMusicBar, setHasMusicBar] = useState(false)
+  const [hasMusicBar, setHasMusicBar] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')  
 
   useEffect(() => {
     const savedProfile = localStorage.getItem('taskly-profile')

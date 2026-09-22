@@ -1323,19 +1323,19 @@ export default function Music({ storageKey = 'guest', onBarChange }) {
       cancelled = true
     }
   }, [storageKey])
+  
 
-  // Auto-play once the new track's audio has been swapped in
-  useEffect(() => {
-    if (shouldAutoPlay.current && audioRef.current && activeTrack) {
-      shouldAutoPlay.current = false
-      audioRef.current.play().catch(() => setIsPlaying(false))
-    }
+    useEffect(() => {
+      if (shouldAutoPlay.current && audioRef.current && activeTrack) {
+        shouldAutoPlay.current = false
+        audioRef.current.play().catch(() => setIsPlaying(false))
+      }
+    }, [activeTrack])
 
-  // Tell the parent app whether the mini player bar is currently showing
-  useEffect(() => {
-    onBarChange?.(!!activeTrack)
-  }, [activeTrack, onBarChange])
-  }, [activeTrack])
+    // Tell the parent app whether the mini player bar is currently showing
+    useEffect(() => {
+      onBarChange?.(!!activeTrack)
+    }, [activeTrack, onBarChange])
 
   // Lock page scroll while the full-screen player is open
   useEffect(() => {
