@@ -4218,9 +4218,13 @@ button {
     gap: 8px;
   }
 
-  .notif-panel {
-    width: calc(100vw - 40px);
-    right: -4px;
+  .notif-wrapper .notif-panel {
+    position: fixed;
+    top: auto;
+    bottom: 16px;
+    left: 16px;
+    right: 16px;
+    width: auto;
   }
 
   .avatar-modal {
