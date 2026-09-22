@@ -1159,7 +1159,8 @@ button {
     grid-template-columns: repeat(2, 1fr);
   }
 }
-
+/* ---------- Responsive ---------- */
+/*
 @media (max-width: 720px) {
   .app-shell {
     flex-direction: column;
