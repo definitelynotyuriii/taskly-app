@@ -1221,11 +1221,56 @@ button {
   flex: 1;
 }
 
-.ph-clock__time {
-  font-family: 'Space Grotesk', sans-serif;
+.world-clock {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  margin-bottom: 12px;
+  background: var(--bg-panel-raised);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+  overflow: hidden;
+}
+
+.world-clock__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+.world-clock__select {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  color: var(--text-primary);
+  border: none;
+  outline: none;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  appearance: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.world-clock__select option {
+  background: #14122a;
+  color: var(--text-primary);
+}
+
+.world-clock__time {
+  flex-shrink: 0;
+  font-family: 'Space Grotesk', monospace, sans-serif;
   font-weight: 700;
   color: var(--text-primary);
   letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 /* ---------- Notifications ---------- */

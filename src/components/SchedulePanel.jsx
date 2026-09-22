@@ -10,6 +10,34 @@ function formatTime(time24) {
 
 const WEEKDAY_LABELS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
+// 24 standard one-hour offset time zones, UTC-12 to UTC+11
+const TIMEZONES = [
+  { offset: "UTC-12", country: "Baker Island, US", tz: "Etc/GMT+12" },
+  { offset: "UTC-11", country: "American Samoa", tz: "Pacific/Pago_Pago" },
+  { offset: "UTC-10", country: "Hawaii, USA", tz: "Pacific/Honolulu" },
+  { offset: "UTC-9", country: "Alaska, USA", tz: "America/Anchorage" },
+  { offset: "UTC-8", country: "USA (Pacific)", tz: "America/Los_Angeles" },
+  { offset: "UTC-7", country: "USA (Mountain)", tz: "America/Denver" },
+  { offset: "UTC-6", country: "Mexico", tz: "America/Mexico_City" },
+  { offset: "UTC-5", country: "USA (Eastern)", tz: "America/New_York" },
+  { offset: "UTC-4", country: "Chile", tz: "America/Santiago" },
+  { offset: "UTC-3", country: "Argentina", tz: "America/Argentina/Buenos_Aires" },
+  { offset: "UTC-2", country: "South Georgia", tz: "Atlantic/South_Georgia" },
+  { offset: "UTC-1", country: "Azores, Portugal", tz: "Atlantic/Azores" },
+  { offset: "UTC+0", country: "United Kingdom", tz: "Europe/London" },
+  { offset: "UTC+1", country: "France", tz: "Europe/Paris" },
+  { offset: "UTC+2", country: "Egypt", tz: "Africa/Cairo" },
+  { offset: "UTC+3", country: "Russia (Moscow)", tz: "Europe/Moscow" },
+  { offset: "UTC+4", country: "United Arab Emirates", tz: "Asia/Dubai" },
+  { offset: "UTC+5", country: "Pakistan", tz: "Asia/Karachi" },
+  { offset: "UTC+6", country: "Bangladesh", tz: "Asia/Dhaka" },
+  { offset: "UTC+7", country: "Thailand / Indonesia (WIB)", tz: "Asia/Bangkok" },
+  { offset: "UTC+8", country: "Philippines / Indonesia (WITA)", tz: "Asia/Manila" },
+  { offset: "UTC+9", country: "Japan / Indonesia (WIT)", tz: "Asia/Tokyo" },
+  { offset: "UTC+10", country: "Australia (Sydney)", tz: "Australia/Sydney" },
+  { offset: "UTC+11", country: "Solomon Islands", tz: "Pacific/Guadalcanal" },
+];
+
 function toDateKey(year, month, day) {
   const mm = String(month + 1).padStart(2, "0");
   const dd = String(day).padStart(2, "0");
@@ -29,7 +57,7 @@ function buildCalendarGrid(year, month) {
   return cells;
 }
 
-function usePhilippineTime() {
+function useTick() {
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
@@ -37,13 +65,7 @@ function usePhilippineTime() {
     return () => clearInterval(timer);
   }, []);
 
-  return now.toLocaleTimeString("en-PH", {
-    timeZone: "Asia/Manila",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-  });
+  return now;
 }
 
 export default function SchedulePanel({ tasks, initialDate = new Date() }) {
@@ -57,8 +79,11 @@ export default function SchedulePanel({ tasks, initialDate = new Date() }) {
       initialDate.getDate()
     )
   );
+  const [selectedTz, setSelectedTz] = useState(TIMEZONES[20].tz); // Philippines / Indonesia (WITA)
 
-  const phTime = usePhilippineTime();
+  const now = useTick();
+
+  const activeZone = TIMEZONES.find((z) => z.tz === selectedTz) ?? TIMEZONES[20];
 
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
@@ -130,10 +155,28 @@ export default function SchedulePanel({ tasks, initialDate = new Date() }) {
           </div>
         </div>
 
-        <div className="ph-clock">
-          <span className="ph-clock__dot" />
-          <span className="ph-clock__label">Philippines</span>
-          <span className="ph-clock__time">{phTime}</span>
+        <div className="world-clock">
+          <span className="world-clock__dot" />
+          <select
+            className="world-clock__select"
+            value={selectedTz}
+            onChange={(e) => setSelectedTz(e.target.value)}
+          >
+            {TIMEZONES.map((z) => (
+              <option key={z.tz} value={z.tz}>
+                {z.offset} · {z.country}
+              </option>
+            ))}
+          </select>
+          <span className="world-clock__time">
+            {now.toLocaleTimeString("en-US", {
+              timeZone: activeZone.tz,
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+              hour12: true,
+            })}
+          </span>
         </div>
 
         <div className="calendar-grid">
