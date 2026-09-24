@@ -74,6 +74,18 @@ export const MY_SONGS = [
     file: '/music/CIRCLES.mp3',
     cover: '/imgs/postmalone1.jpg',
   },
+    {
+    name: 'Let Her Go',
+    artist: 'The Passenger',
+    file: '/music/LETHERGO.mp3',
+    cover: '/imgs/passenger1.jpg',
+  },
+      {
+    name: 'Congratulations',
+    artist: 'Post Malonr',
+    file: '/music/CONGRATULATIONS.mp3',
+    cover: '/imgs/postmalone2.jpg',
+  },
 
 ]
 
