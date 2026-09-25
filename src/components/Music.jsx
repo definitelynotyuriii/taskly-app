@@ -82,9 +82,15 @@ export const MY_SONGS = [
   },
       {
     name: 'Congratulations',
-    artist: 'Post Malonr',
+    artist: 'Post Malone',
     file: '/music/CONGRATULATIONS.mp3',
     cover: '/imgs/postmalone2.jpg',
+  },
+        {
+    name: 'Shut it Down',
+    artist: 'Post Malonr',
+    file: '/music/SHUTITDOWN.mp3',
+    cover: '/imgs/drake1.jpg',
   },
 
 ]
