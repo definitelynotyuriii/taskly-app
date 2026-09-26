@@ -92,6 +92,18 @@ export const MY_SONGS = [
     file: '/music/SHUTITDOWN.mp3',
     cover: '/imgs/drake1.jpg',
   },
+          {
+    name: 'Shut it Down',
+    artist: 'Post Malonr',
+    file: '/music/SHUTITDOWN.mp3',
+    cover: '/imgs/drake1.jpg',
+  },
+          {
+    name: 'Shut it Down',
+    artist: 'Post Malonr',
+    file: '/music/SHUTITDOWN.mp3',
+    cover: '/imgs/drake1.jpg',
+  },
 
 ]
 
